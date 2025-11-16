@@ -1,0 +1,33 @@
+{
+	"schemaVersion": 1,
+	"id": "opal",
+	"version": "2.0.0",
+	"name": "Opal",
+	"description": "opel",
+	"authors": [
+		"senoe",
+		"tear",
+		"idk"
+	],
+	"contact": {
+		"homepage": "https://opalclient.com/",
+		"sources": "yes"
+	},
+	"license": "GPL-3.0",
+	"icon": "assets/opal/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"wtf.opal.OpalFabric"
+		]
+	},
+	"mixins": [
+		"opal.mixins.json"
+	],
+    "accessWidener": "opal.accesswidener",
+	"depends": {
+		"fabricloader": ">=0.17.2",
+		"minecraft": "~1.21.10",
+		"java": ">=21"
+	}
+}
