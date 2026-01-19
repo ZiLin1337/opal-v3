@@ -14,7 +14,7 @@ import wtf.opal.client.feature.module.property.impl.number.NumberProperty;
 public final class KillAuraSettings {
 
     private final RotationProperty rotationProperty;
-    private final ModeProperty<Mode> mode;
+    private final ModeProperty<TargetingMode> targetingMode;
     private final TargetProperty targetProperty;
     private final CPSProperty cpsProperty, swingCpsProperty;
 
@@ -41,16 +41,33 @@ public final class KillAuraSettings {
         this.requireWeapon = new BooleanProperty("Require weapon", false);
         this.overrideRaycast = new BooleanProperty("Override raycast", true);
         this.tickLookahead = new BooleanProperty("Tick lookahead", false).hideIf(() -> !this.isOverrideRaycast());
-        this.mode = new ModeProperty<>("Mode", Mode.SWITCH);
+        this.targetingMode = new ModeProperty<>("Mode", TargetingMode.SWITCH);
         this.fov = new NumberProperty("FOV", 180, 1, 180, 1);
 
         this.visuals = new MultipleBooleanProperty("Visuals",
                 new BooleanProperty("Box", false)
         );
 
+        // Hide all Hypixel-specific properties when in Heypixel mode
+        rotationProperty.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
+        targetProperty.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
+        cpsProperty.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
+        swingCpsProperty.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
+        rotationRange.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
+        swingRange.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
+        hideFakeSwings.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
+        requireAttackKey.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
+        requireWeapon.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
+        overrideRaycast.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
+        tickLookahead.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
+        targetingMode.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
+        fov.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
+        visuals.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
+
         module.addProperties(
-                rotationProperty.get(), new GroupProperty("Requirements", requireWeapon, requireAttackKey),
-                mode, rotationRange, swingRange, hideFakeSwings, targetProperty.get(),
+                rotationProperty.get(),
+                new GroupProperty("Requirements", requireWeapon, requireAttackKey),
+                targetingMode, rotationRange, swingRange, hideFakeSwings, targetProperty.get(),
                 fov, overrideRaycast, tickLookahead, visuals
         );
     }
@@ -103,21 +120,21 @@ public final class KillAuraSettings {
         return rotationProperty.createModel();
     }
 
-    public Mode getMode() {
-        return mode.getValue();
+    public TargetingMode getTargetingMode() {
+        return targetingMode.getValue();
     }
 
     public float getFov() {
         return this.fov.getValue().floatValue();
     }
 
-    public enum Mode {
+    public enum TargetingMode {
         SINGLE("Single"),
         SWITCH("Switch");
 
         private final String name;
 
-        Mode(String name) {
+        TargetingMode(String name) {
             this.name = name;
         }
 

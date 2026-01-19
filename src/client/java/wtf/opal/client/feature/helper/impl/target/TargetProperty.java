@@ -1,5 +1,6 @@
 package wtf.opal.client.feature.helper.impl.target;
 
+import java.util.function.BooleanSupplier;
 import wtf.opal.client.feature.module.property.impl.bool.BooleanProperty;
 import wtf.opal.client.feature.module.property.impl.bool.MultipleBooleanProperty;
 
@@ -24,7 +25,12 @@ public final class TargetProperty {
     }
 
     public MultipleBooleanProperty get() {
-        return this.property;
+        return property;
+    }
+
+    public TargetProperty hideIf(BooleanSupplier hiddenSupplier) {
+        this.property.hideIf(hiddenSupplier);
+        return this;
     }
 
     public int getTargetFlags() {

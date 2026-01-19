@@ -8,6 +8,7 @@ import wtf.opal.client.feature.module.property.impl.mode.ModeProperty;
 import wtf.opal.client.feature.module.property.impl.number.NumberProperty;
 
 import java.util.Arrays;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 
 public final class RotationProperty {
@@ -39,7 +40,12 @@ public final class RotationProperty {
     }
 
     public GroupProperty get() {
-        return this.groupProperty;
+        return groupProperty;
+    }
+
+    public RotationProperty hideIf(BooleanSupplier hiddenSupplier) {
+        this.groupProperty.hideIf(hiddenSupplier);
+        return this;
     }
 
     public int getMaxAngle() {
