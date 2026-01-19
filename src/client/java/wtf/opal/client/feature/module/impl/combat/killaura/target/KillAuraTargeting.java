@@ -124,7 +124,7 @@ public final class KillAuraTargeting {
 
         final List<CurrentTarget> targetList = this.convertTargets(targets, entityInteractionRange);
 
-        if (!distanceSorting && this.settings.getMode() == KillAuraSettings.Mode.SWITCH && targetList.size() > 1) {
+        if (!distanceSorting && this.settings.getTargetingMode() == KillAuraSettings.TargetingMode.SWITCH && targetList.size() > 1) {
             targetList.sort(Comparator.comparingDouble(t -> -((t.getKillAuraTarget().getTarget().getFullHealth() * 25.0D) + (t.getKillAuraTarget().getLastAttackData() == null ? 0 : t.getKillAuraTarget().getLastAttackData().getTime()))));
         }
 
