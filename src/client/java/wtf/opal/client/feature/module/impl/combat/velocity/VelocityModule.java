@@ -8,6 +8,7 @@ import wtf.opal.client.feature.module.ModuleCategory;
 import wtf.opal.client.feature.module.impl.combat.velocity.impl.MushMCVelocity;
 import wtf.opal.client.feature.module.impl.combat.velocity.impl.NormalVelocity;
 import wtf.opal.client.feature.module.impl.combat.velocity.impl.WatchdogVelocity;
+import wtf.opal.client.feature.module.impl.combat.velocity.impl.NoxzVelocity;
 import wtf.opal.client.feature.module.impl.movement.flight.FlightModule;
 import wtf.opal.client.feature.module.impl.movement.longjump.LongJumpModule;
 import wtf.opal.client.feature.module.property.impl.mode.ModeProperty;
@@ -21,7 +22,8 @@ public final class VelocityModule extends Module {
     public VelocityModule() {
         super("Velocity", "Reduces or nullifies your players velocity when being hit.", ModuleCategory.COMBAT);
         this.addProperties(this.mode);
-        addModuleModes(mode, new NormalVelocity(this), new WatchdogVelocity(this), new MushMCVelocity(this));
+        // 注册所有模式
+        addModuleModes(mode, new NormalVelocity(this), new WatchdogVelocity(this), new NoxzVelocity(this), new MushMCVelocity(this));
     }
 
     @Override
@@ -47,7 +49,8 @@ public final class VelocityModule extends Module {
     public enum Mode {
         NORMAL("Normal"),
         WATCHDOG("Watchdog"),
-        MUSHMC("MushMC");
+        MUSHMC("MushMC"),  // 注意这里改为逗号 ","
+        NOXZ("Noxz");      // 分号 ";" 放在最后一个常量后面
 
         private final String name;
 
