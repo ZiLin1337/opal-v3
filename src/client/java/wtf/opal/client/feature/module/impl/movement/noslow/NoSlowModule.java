@@ -2,17 +2,15 @@ package wtf.opal.client.feature.module.impl.movement.noslow;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.tag.ItemTags;
-import wtf.opal.client.OpalClient;
 import wtf.opal.client.feature.helper.impl.player.slot.SlotHelper;
 import wtf.opal.client.feature.module.Module;
 import wtf.opal.client.feature.module.ModuleCategory;
+import wtf.opal.client.feature.module.impl.movement.noslow.impl.HeypixelNoSlow; // 导入新类
 import wtf.opal.client.feature.module.impl.movement.noslow.impl.UniversalNoSlow;
 import wtf.opal.client.feature.module.impl.movement.noslow.impl.VanillaNoSlow;
 import wtf.opal.client.feature.module.impl.movement.noslow.impl.WatchdogNoSlow;
-import wtf.opal.client.feature.module.impl.world.scaffold.ScaffoldModule;
 import wtf.opal.client.feature.module.property.impl.bool.BooleanProperty;
 import wtf.opal.client.feature.module.property.impl.mode.ModeProperty;
-import wtf.opal.client.feature.module.repository.ModuleRepository;
 import wtf.opal.event.impl.game.PreGameTickEvent;
 import wtf.opal.event.subscriber.Subscribe;
 
@@ -28,7 +26,8 @@ public final class NoSlowModule extends Module {
 
     public NoSlowModule() {
         super("No Slow", "Removes vanilla slowdowns such as item usage.", ModuleCategory.MOVEMENT);
-        addModuleModes(mode, new VanillaNoSlow(this), new WatchdogNoSlow(this), new UniversalNoSlow(this));
+        // 在这里注册 HeypixelNoSlow
+        addModuleModes(mode, new VanillaNoSlow(this), new WatchdogNoSlow(this), new UniversalNoSlow(this), new HeypixelNoSlow(this));
         addProperties(mode, allowSprinting);
     }
 
@@ -71,7 +70,8 @@ public final class NoSlowModule extends Module {
     public enum Mode {
         VANILLA("Vanilla"),
         WATCHDOG("Watchdog"),
-        UNIVERSAL("Universal");
+        UNIVERSAL("Universal"),
+        HEYPIXEL("Heypixel"); // 添加枚举
 
         private final String name;
 
@@ -95,5 +95,4 @@ public final class NoSlowModule extends Module {
     public boolean isSprintingAllowed() {
         return allowSprinting.getValue();
     }
-
 }

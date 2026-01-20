@@ -44,18 +44,20 @@ import wtf.opal.utility.player.RaycastUtility;
 import wtf.opal.utility.render.ColorUtility;
 import wtf.opal.utility.render.CustomRenderLayers;
 
-import java.awt.Color;
 import java.util.function.Predicate;
 
 import static wtf.opal.client.Constants.mc;
 
 public final class KillAuraModule extends Module {
 
+    // 1. 定义 Mode 属性
     private final ModeProperty<Mode> mode = new ModeProperty<>("Mode", this, Mode.HYPIXEL);
+
+    // 2. 初始化 Settings (注意：Settings 内部不再自动注册属性)
     private final KillAuraSettings settings = new KillAuraSettings(this);
     private final KillAuraTargeting targeting = new KillAuraTargeting(this.settings);
 
-    // Heypixel mode properties
+    // 3. Heypixel 模式的属性
     private final NumberProperty heypixelAimRange = new NumberProperty("Aim Range", 5.0, 1.0, 6.0, 0.1)
             .id("heypixelAimRange")
             .hideIf(() -> this.mode.getValue() != Mode.HEYPIXEL);
@@ -68,7 +70,7 @@ public final class KillAuraModule extends Module {
             .id("heypixelRotationSpeed")
             .hideIf(() -> this.mode.getValue() != Mode.HEYPIXEL);
 
-    // Heypixel mode fields
+    // Heypixel 运行时变量
     private Entity heypixelTarget;
     private long heypixelLastAttackTime = 0;
     private int hypixelAttacks;
@@ -80,7 +82,17 @@ public final class KillAuraModule extends Module {
                 "Finds and attacks the most relevant nearby entities.",
                 ModuleCategory.COMBAT
         );
-        addProperties(mode, heypixelAimRange, heypixelCps, heypixelRotationSpeed);
+
+        // 核心修复：手动控制添加顺序
+
+        // 第一步：添加 Mode，确保它永远在 GUI 最顶端
+        addProperties(mode);
+
+        // 第二步：添加 Heypixel 属性
+        addProperties(heypixelAimRange, heypixelCps, heypixelRotationSpeed);
+
+        // 第三步：调用 Settings 的注册方法添加 Hypixel 属性
+        settings.registerProperties();
     }
 
     public KillAuraSettings getSettings() {
@@ -113,7 +125,7 @@ public final class KillAuraModule extends Module {
     @Subscribe
     public void onHandleInput(final MouseHandleInputEvent event) {
         if (mode.getValue() == Mode.HEYPIXEL) {
-            return; // Heypixel mode handles input differently in onPreGameTick
+            return; // Heypixel 模式在 PreGameTick 中处理攻击
         }
 
         final CurrentTarget target = this.targeting.getTarget();
@@ -185,7 +197,7 @@ public final class KillAuraModule extends Module {
     }
 
     private void renderHeypixelWorld(final RenderWorldEvent event) {
-        // Heypixel specific rendering
+        // Heypixel specific rendering (TargetESP, etc.)
     }
 
     private void renderHypixelWorld(final RenderWorldEvent event) {
@@ -309,7 +321,7 @@ public final class KillAuraModule extends Module {
     private void findHeypixelTarget() {
         final double range = heypixelAimRange.getValue();
         final CurrentTarget currentTarget = this.targeting.getRotationTarget();
-        
+
         if (currentTarget != null) {
             final LivingEntity entity = currentTarget.getEntity();
             if (entity != null && !entity.isDead() && entity.isAttackable() && mc.player.distanceTo(entity) <= range) {
@@ -335,7 +347,7 @@ public final class KillAuraModule extends Module {
         final long currentTime = System.currentTimeMillis();
         final double cps = heypixelCps.getValue();
         long delay = (long) (1000.0 / cps);
-        
+
         // Add random variation
         delay += (long) ((Math.random() - 0.5) * delay * 0.4);
 

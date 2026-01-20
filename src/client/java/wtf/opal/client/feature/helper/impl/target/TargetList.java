@@ -10,6 +10,7 @@ import wtf.opal.client.feature.helper.impl.server.KnownServer;
 import wtf.opal.client.feature.helper.impl.target.impl.Target;
 import wtf.opal.client.feature.helper.impl.target.impl.TargetLivingEntity;
 import wtf.opal.client.feature.helper.impl.target.impl.TargetPlayer;
+import wtf.opal.client.feature.module.impl.combat.AntiBotModule; // 导入新模块
 
 import java.util.*;
 
@@ -44,6 +45,13 @@ public final class TargetList {
             if (!(entity instanceof LivingEntity livingEntity)) {
                 continue;
             }
+
+            // --- 新增代码开始 ---
+            // 如果 AntiBot 认为是机器人，直接跳过
+            if (AntiBotModule.isBot(entity)) {
+                continue;
+            }
+            // --- 新增代码结束 ---
 
             if (currentServer != null && !currentServer.isValidTarget(livingEntity)) {
                 continue;

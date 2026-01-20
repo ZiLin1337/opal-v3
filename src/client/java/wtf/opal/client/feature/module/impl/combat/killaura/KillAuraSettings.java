@@ -13,6 +13,8 @@ import wtf.opal.client.feature.module.property.impl.number.NumberProperty;
 
 public final class KillAuraSettings {
 
+    private final KillAuraModule module;
+
     private final RotationProperty rotationProperty;
     private final ModeProperty<TargetingMode> targetingMode;
     private final TargetProperty targetProperty;
@@ -28,6 +30,7 @@ public final class KillAuraSettings {
     private final MultipleBooleanProperty visuals;
 
     public KillAuraSettings(final KillAuraModule module) {
+        this.module = module;
         this.rotationProperty = new RotationProperty(InstantRotationModel.INSTANCE);
         this.targetProperty = new TargetProperty(true, false, false, false, false, true);
         this.cpsProperty = new CPSProperty(module, "Attack CPS", true);
@@ -64,6 +67,11 @@ public final class KillAuraSettings {
         fov.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
         visuals.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
 
+        // 注意：这里删除了 module.addProperties(...)
+    }
+
+    // 新增方法：手动注册属性
+    public void registerProperties() {
         module.addProperties(
                 rotationProperty.get(),
                 new GroupProperty("Requirements", requireWeapon, requireAttackKey),
@@ -143,5 +151,4 @@ public final class KillAuraSettings {
             return name;
         }
     }
-
 }

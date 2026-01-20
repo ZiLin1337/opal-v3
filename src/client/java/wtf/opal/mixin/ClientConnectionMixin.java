@@ -112,23 +112,29 @@ public abstract class ClientConnectionMixin implements ClientConnectionAccess {
 
     @Inject(
             method = "channelRead0(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/network/packet/Packet;)V",
-            at = @At(value = "INVOKE", target = "Lio/netty/channel/Channel;isOpen()Z"),
+            at = @At("HEAD"), // 修改此处：从 INVOKE isOpen 改为 HEAD
             cancellable = true
     )
     private void hookChannelRead(ChannelHandlerContext channelHandlerContext, Packet<?> packet, CallbackInfo ci) {
         if (this.getSide() == NetworkSide.CLIENTBOUND) {
+            // 处理 Bundle 包的递归逻辑
             if (packet instanceof BundleS2CPacket bundleS2CPacket) {
-                ci.cancel();
+                ci.cancel(); // 取消原始包的处理
 
                 for (Packet<?> packetInBundle : bundleS2CPacket.getPackets()) {
                     try {
+                        // 递归调用 channelRead0 处理 Bundle 内部的包
                         channelRead0(channelHandlerContext, packetInBundle);
                     } catch (OffThreadException ignored) {}
                 }
                 return;
             }
+
+            // 触发瞬时接收事件
             InstantaneousReceivePacketEvent event = new InstantaneousReceivePacketEvent(packet);
             EventDispatcher.dispatch(event);
+
+            // 如果事件被取消或处于阻塞列表，则拦截该包
             if (event.isCancelled() || InboundNetworkBlockage.get().isBlocked(packet)) {
                 ci.cancel();
             }
