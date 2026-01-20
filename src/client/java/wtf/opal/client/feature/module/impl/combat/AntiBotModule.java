@@ -36,6 +36,9 @@ public final class AntiBotModule extends Module {
         if (mc.player == null || mc.world == null) return false;
 
         AntiBotModule module = OpalClient.getInstance().getModuleRepository().getModule(AntiBotModule.class);
+        if (module == null) {
+            return false;
+        }
         if (!module.isEnabled()) {
             return false;
         }
