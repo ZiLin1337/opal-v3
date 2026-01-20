@@ -92,6 +92,7 @@ public final class OpalClient {
                     new AttackDelayModule(),
                     new CriticalsModule(),
                     new VelocityModule(),
+                    new AntiBotModule(),
                     new AutoHeadModule(),
                     // Visual
                     new ClickGUIModule(),
