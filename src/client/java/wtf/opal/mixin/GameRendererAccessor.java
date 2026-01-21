@@ -20,9 +20,6 @@ public interface GameRendererAccessor {
     float callGetFov(final Camera camera, final float tickDelta, final boolean changingFov);
 
     @Invoker
-    void callTiltViewWhenHurt(final float tickDelta, final boolean flag, final Matrix4f matrix);
-
-    @Invoker
     void callBobView(final MatrixStack matrices, final float tickDelta);
 
     @Accessor
