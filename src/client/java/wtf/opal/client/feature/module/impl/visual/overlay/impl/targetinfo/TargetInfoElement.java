@@ -60,6 +60,14 @@ public final class TargetInfoElement implements IOverlayElement {
     private static final NVGTextRenderer BOLD_FONT = FontRepository.getFont("productsans-bold");
     private static final NVGTextRenderer MEDIUM_FONT = FontRepository.getFont("productsans-medium");
     private static final NVGTextRenderer ICON_FONT = FontRepository.getFont("materialicons-regular");
+
+    private static final NVGTextRenderer CJK_FONT = FontRepository.getOptionalFontFromResources(
+            "minecraft-unifont",
+            "assets/minecraft/font/unifont.ttf",
+            "assets/minecraft/font/unifont_all_no_pua.ttf",
+            "assets/minecraft/font/unifont_all.ttf"
+    );
+
     private static final DecimalFormat HEALTH_DF = new DecimalFormat("0.#");
 
     private final Animation targetAnimation, healthAnimation;
@@ -108,9 +116,13 @@ public final class TargetInfoElement implements IOverlayElement {
         final float headOffset = 22.5F;
         final float equipmentWidth = 55;
 
+        final boolean useCjkFont = CJK_FONT != null && containsChinese(targetName);
+        final NVGTextRenderer nameFont = useCjkFont ? CJK_FONT : BOLD_FONT;
+        final float nameWidth = nameFont.getStringWidth(targetName, targetNameSize);
+
         final ScreenPositionProperty screenPosition = this.settings.getScreenPosition();
 
-        final float width = (padding * 2) + Math.max(50, Math.max(equipmentWidth, BOLD_FONT.getStringWidth(targetName, targetNameSize))) + headOffset + 1;
+        final float width = (padding * 2) + Math.max(50, Math.max(equipmentWidth, nameWidth)) + headOffset + 1;
         final float height = (padding * 2) + 25.5F;
 
         final float x = screenPosition.getScaledX();
@@ -141,7 +153,7 @@ public final class TargetInfoElement implements IOverlayElement {
             NVGRenderer.roundedRect(x, y, width, height, 4, 0x80090909);
 
             // name
-            BOLD_FONT.drawString(finalTargetName, x + padding + headOffset, y + 9, targetNameSize, targetNameColor);
+            nameFont.drawString(finalTargetName, x + padding + headOffset, y + 9, targetNameSize, targetNameColor);
 
             // health
             final float absorption = target.entity.getAbsorptionAmount();
@@ -393,6 +405,28 @@ public final class TargetInfoElement implements IOverlayElement {
             return -1;
         }
         return Integer.parseInt(mc.getTextureManager().getTexture(identifier).getGlTexture().getLabel());
+    }
+
+    private static boolean containsChinese(final String text) {
+        if (text == null || text.isEmpty()) {
+            return false;
+        }
+
+        for (int i = 0; i < text.length(); ) {
+            final int codePoint = text.codePointAt(i);
+
+            if ((codePoint >= 0x4E00 && codePoint <= 0x9FFF) // CJK Unified Ideographs
+                    || (codePoint >= 0x3400 && codePoint <= 0x4DBF) // CJK Unified Ideographs Extension A
+                    || (codePoint >= 0x20000 && codePoint <= 0x2EBEF) // CJK Unified Ideographs Extensions B-F
+                    || (codePoint >= 0xF900 && codePoint <= 0xFAFF) // CJK Compatibility Ideographs
+                    || (codePoint >= 0x2F800 && codePoint <= 0x2FA1F)) { // CJK Compatibility Ideographs Supplement
+                return true;
+            }
+
+            i += Character.charCount(codePoint);
+        }
+
+        return false;
     }
 
     private static final class Target {

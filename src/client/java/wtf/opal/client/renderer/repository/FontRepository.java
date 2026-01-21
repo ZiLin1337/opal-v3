@@ -11,17 +11,31 @@ public final class FontRepository {
     private static final HashMap<String, NVGTextRenderer> TEXT_RENDERER_MAP = new HashMap<>();
 
     public static NVGTextRenderer getFont(final String name) {
-        if (TEXT_RENDERER_MAP.containsKey(name))
-            return TEXT_RENDERER_MAP.get(name);
+        return getFontFromResources(name, "assets/opal/fonts/" + name + ".ttf");
+    }
 
-        final InputStream pathURL = Knot.getLauncher().getTargetClassLoader().getResourceAsStream("assets/opal/fonts/" + name + ".ttf");
-
-        if (pathURL != null) {
-            TEXT_RENDERER_MAP.put(name, new NVGTextRenderer(name, pathURL));
-
-            return TEXT_RENDERER_MAP.get(name);
+    public static NVGTextRenderer getFontFromResources(final String key, final String... resourcePaths) {
+        final NVGTextRenderer font = getOptionalFontFromResources(key, resourcePaths);
+        if (font != null) {
+            return font;
         }
 
-        throw new RuntimeException("Font not found: " + name);
+        throw new RuntimeException("Font not found: " + key);
+    }
+
+    public static NVGTextRenderer getOptionalFontFromResources(final String key, final String... resourcePaths) {
+        if (TEXT_RENDERER_MAP.containsKey(key)) {
+            return TEXT_RENDERER_MAP.get(key);
+        }
+
+        for (final String resourcePath : resourcePaths) {
+            final InputStream stream = Knot.getLauncher().getTargetClassLoader().getResourceAsStream(resourcePath);
+            if (stream != null) {
+                TEXT_RENDERER_MAP.put(key, new NVGTextRenderer(key, stream));
+                return TEXT_RENDERER_MAP.get(key);
+            }
+        }
+
+        return null;
     }
 }
