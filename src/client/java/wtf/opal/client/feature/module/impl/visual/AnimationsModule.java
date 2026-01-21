@@ -1,39 +1,21 @@
 package wtf.opal.client.feature.module.impl.visual;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerInteractItemC2SPacket;
-import net.minecraft.util.Hand;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RotationAxis;
-import wtf.opal.client.OpalClient;
 import wtf.opal.client.feature.module.Module;
 import wtf.opal.client.feature.module.ModuleCategory;
-import wtf.opal.client.feature.module.impl.combat.killaura.KillAuraModule;
 import wtf.opal.client.feature.module.property.impl.GroupProperty;
 import wtf.opal.client.feature.module.property.impl.bool.BooleanProperty;
 import wtf.opal.client.feature.module.property.impl.mode.ModeProperty;
 import wtf.opal.client.feature.module.property.impl.number.NumberProperty;
-import wtf.opal.client.feature.module.repository.ModuleRepository;
-import wtf.opal.event.impl.game.PreGameTickEvent;
-import wtf.opal.event.impl.game.packet.SendPacketEvent;
-import wtf.opal.event.subscriber.Subscribe;
 import wtf.opal.utility.player.BlockUtility;
-
-import static wtf.opal.client.Constants.mc;
 
 public final class AnimationsModule extends Module {
 
-    // --- 属性设置 ---
+    // Sword blocking
     private final BooleanProperty swordBlocking = new BooleanProperty("Enabled", true);
     private final ModeProperty<BlockMode> blockAnimationMode = new ModeProperty<>("Block animation", BlockMode.V1_7).hideIf(() -> !swordBlocking.getValue());
-
-    // Fake Block / Aura Block 属性
-    public final BooleanProperty auraAutoBlock = new BooleanProperty("Aura Auto Block", true);
-    public final BooleanProperty onlyAura = new BooleanProperty("Only Aura", false);
 
     // Shields
     private final BooleanProperty alwaysHideShield = new BooleanProperty("Always hidden", true);
@@ -55,15 +37,11 @@ public final class AnimationsModule extends Module {
     private final BooleanProperty hideDropSwing = new BooleanProperty("Hide drop swing", false);
     private final BooleanProperty equipOffset = new BooleanProperty("Equip offset", false);
 
-    // 用于跟踪状态
-    public static boolean isBlocking = false;
-    private KillAuraModule killAuraModule;
-
     public AnimationsModule() {
         super("Animations", "Modifies animations within the game.", ModuleCategory.VISUAL);
         setEnabled(true);
         addProperties(
-                new GroupProperty("Sword blocking", swordBlocking, blockAnimationMode, auraAutoBlock, onlyAura),
+                new GroupProperty("Sword blocking", swordBlocking, blockAnimationMode),
                 new GroupProperty("Shields", alwaysHideShield, hideShieldSlotInHotbar),
                 new GroupProperty("Player", oldBackwardsWalking, oldArmorDamageTint, oldSneaking, fixPoseRepeat),
                 new GroupProperty(
@@ -74,113 +52,67 @@ public final class AnimationsModule extends Module {
         );
     }
 
-    // --- Getters ---
-    public boolean isHideDropSwing() { return this.hideDropSwing.getValue(); }
-    public boolean isOldSneaking() { return this.oldSneaking.getValue(); }
-    public boolean isFixPoseRepeat() { return this.fixPoseRepeat.getValue(); }
-    public float getSwingSlowdown() { return swingSlowdown.getValue().floatValue() + 1.F; }
-    public boolean isSwordBlocking() { return swordBlocking.getValue(); }
-    public boolean isEquipOffset() { return equipOffset.getValue(); }
-    public boolean isOldCooldownAnimation() { return oldCooldownAnimation.getValue(); }
-    public boolean isOldBackwardsWalking() { return oldBackwardsWalking.getValue(); }
-    public boolean isOldArmorDamageTint() { return oldArmorDamageTint.getValue(); }
-    public boolean isHideShield() { return alwaysHideShield.getValue(); }
-    public boolean isHideShieldSlotInHotbar() { return hideShieldSlotInHotbar.getValue(); }
-    public float getMainHandScale() { return mainHandScale.getValue().floatValue(); }
-    public float getMainHandX() { return mainHandX.getValue().floatValue(); }
-    public float getMainHandY() { return mainHandY.getValue().floatValue(); }
-    public boolean isSwingWhileUsing() { return this.swingWhileUsing.getValue(); }
-
-    /**
-     * 判断是否触发了 KillAura 的 Fake Block
-     */
-    public boolean isAuraFakeBlocking() {
-        if (!this.isEnabled() || !this.auraAutoBlock.getValue()) return false;
-        KillAuraModule ka = getKillAura();
-        return ka != null && ka.isEnabled() && ka.getTargetEntity() != null;
+    public boolean isHideDropSwing() {
+        return this.hideDropSwing.getValue();
     }
 
-    /**
-     * 获取 KillAura 模块实例 (使用了安全的反射/单例获取，请确保 OpalClient 存在)
-     */
-    private KillAuraModule getKillAura() {
-        if (this.killAuraModule == null) {
-            try {
-                final ModuleRepository moduleRepository = OpalClient.getInstance().getModuleRepository();
-                this.killAuraModule = moduleRepository.getModule(KillAuraModule.class);
-            } catch (Exception e) {
-                return null;
-            }
-        }
-        return this.killAuraModule;
+    public boolean isOldSneaking() {
+        return this.oldSneaking.getValue();
     }
 
-    /**
-     * 判断玩家是否持有剑 (兼容多种 Mappings)
-     */
-    private boolean isHoldingSword(ClientPlayerEntity player) {
-        if (player == null) return false;
-        ItemStack stack = player.getMainHandStack();
-        if (stack == null || stack.isEmpty()) return false;
-        // 使用类名字符串判断，避免 SwordItem / ItemSword 的导入错误
-        String className = stack.getItem().getClass().getSimpleName();
-        return className.contains("Sword");
+    public boolean isFixPoseRepeat() {
+        return this.fixPoseRepeat.getValue();
     }
 
-    // --- 事件处理 ---
-
-    /**
-     * 拦截真实格挡包
-     * 修复 3: 使用 SendPacketEvent (因为这是发送出去的 C2S 包)
-     * 如果必须使用 ReceivePacketEvent 才能编译，请将参数改回 ReceivePacketEvent，但逻辑可能无效。
-     */
-    @Subscribe
-    public void onPacket(SendPacketEvent event) {
-        // PlayerInteractItemC2SPacket 是使用物品/格挡的数据包
-        if (event.getPacket() instanceof PlayerInteractItemC2SPacket) {
-            // 如果处于 Fake Block 状态且手持剑，拦截包
-            if (isAuraFakeBlocking() && isHoldingSword(mc.player)) {
-                event.setCancelled();
-            }
-        }
+    public float getSwingSlowdown() {
+        return swingSlowdown.getValue().floatValue() + 1.F;
     }
 
-    /**
-     * 发送挥手包模拟动画
-     */
-    @Subscribe
-    public void onPreTick(PreGameTickEvent event) {
-        if (mc.player == null) return;
-
-        if (isAuraFakeBlocking()) {
-            isBlocking = true;
-            // 模拟挥手防止发呆判定
-            if (mc.player.age % 10 < 5) {
-                // 修复 4: 确保这里使用的是正确的发包方法
-                // 如果 MinecraftClient.getInstance().getNetworkHandler() 为空，添加检查
-                if (mc.getNetworkHandler() != null) {
-                    mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
-                }
-            }
-        } else {
-            // 真实格挡判定
-            isBlocking = mc.player.isUsingItem() && isHoldingSword(mc.player);
-        }
+    public boolean isSwordBlocking() {
+        return swordBlocking.getValue();
     }
 
-    /**
-     * 核心渲染逻辑
-     */
+    public boolean isEquipOffset() {
+        return equipOffset.getValue();
+    }
+
+    public boolean isOldCooldownAnimation() {
+        return oldCooldownAnimation.getValue();
+    }
+
+    public boolean isOldBackwardsWalking() {
+        return oldBackwardsWalking.getValue();
+    }
+
+    public boolean isOldArmorDamageTint() {
+        return oldArmorDamageTint.getValue();
+    }
+
+    public boolean isHideShield() {
+        return alwaysHideShield.getValue();
+    }
+
+    public boolean isHideShieldSlotInHotbar() {
+        return hideShieldSlotInHotbar.getValue();
+    }
+
+    public float getMainHandScale() {
+        return mainHandScale.getValue().floatValue();
+    }
+
+    public float getMainHandX() {
+        return mainHandX.getValue().floatValue();
+    }
+
+    public float getMainHandY() {
+        return mainHandY.getValue().floatValue();
+    }
+
+    public boolean isSwingWhileUsing() {
+        return this.swingWhileUsing.getValue();
+    }
+
     public void applyTransformations(final MatrixStack matrices, final float swingProgress) {
-        boolean shouldRenderBlock = isSwordBlocking() && (
-                (mc.player.isUsingItem() && isHoldingSword(mc.player)) // 真实格挡
-                        || isAuraFakeBlocking() // KA Fake Block
-        );
-
-        if (!shouldRenderBlock) {
-            return;
-        }
-
         final float convertedProgress = MathHelper.sin(MathHelper.sqrt(swingProgress) * (float) Math.PI);
         final float f = MathHelper.sin(swingProgress * swingProgress * (float) Math.PI);
 
@@ -246,4 +178,5 @@ public final class AnimationsModule extends Module {
             return name;
         }
     }
+
 }
