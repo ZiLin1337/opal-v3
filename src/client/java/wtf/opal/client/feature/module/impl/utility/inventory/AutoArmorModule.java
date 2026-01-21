@@ -44,7 +44,7 @@ public final class AutoArmorModule extends Module {
             return;
 
         final KillAuraModule killAuraModule = moduleRepository.getModule(KillAuraModule.class);
-        if (killAuraModule.isEnabled() && killAuraModule.getTargeting().isTargetSelected()) {
+        if (killAuraModule.isEnabled() && killAuraModule.isTargetSelected()) {
             return;
         }
 

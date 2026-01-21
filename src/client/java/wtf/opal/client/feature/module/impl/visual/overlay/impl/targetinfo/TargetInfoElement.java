@@ -29,7 +29,6 @@ import wtf.opal.client.OpalClient;
 import wtf.opal.client.feature.helper.impl.LocalDataWatch;
 import wtf.opal.client.feature.helper.impl.server.impl.HypixelServer;
 import wtf.opal.client.feature.module.impl.combat.killaura.KillAuraModule;
-import wtf.opal.client.feature.module.impl.combat.killaura.target.CurrentTarget;
 import wtf.opal.client.feature.module.impl.visual.overlay.IOverlayElement;
 import wtf.opal.client.feature.module.impl.visual.overlay.OverlayModule;
 import wtf.opal.client.feature.module.property.impl.ScreenPositionProperty;
@@ -339,10 +338,7 @@ public final class TargetInfoElement implements IOverlayElement {
         if (target == null) {
             final KillAuraModule killAuraModule = OpalClient.getInstance().getModuleRepository().getModule(KillAuraModule.class);
             if (killAuraModule.isEnabled()) {
-                final CurrentTarget killAuraTarget = killAuraModule.getTargeting().getTarget();
-                if (killAuraTarget != null) {
-                    target = killAuraTarget.getEntity();
-                }
+                target = killAuraModule.getTargetEntity();
             }
         }
 
