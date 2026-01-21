@@ -124,6 +124,10 @@ public final class KillAuraModule extends Module {
 
     @Subscribe
     public void onHandleInput(final MouseHandleInputEvent event) {
+        if (mc.player == null || mc.world == null) {
+            return;
+        }
+
         if (mode.getValue() == Mode.HEYPIXEL) {
             return; // Heypixel 模式在 PreGameTick 中处理攻击
         }
@@ -189,6 +193,10 @@ public final class KillAuraModule extends Module {
 
     @Subscribe
     public void onRenderWorld(final RenderWorldEvent event) {
+        if (mc.player == null || mc.world == null) {
+            return;
+        }
+
         if (mode.getValue() == Mode.HEYPIXEL) {
             renderHeypixelWorld(event);
         } else {
@@ -225,6 +233,10 @@ public final class KillAuraModule extends Module {
 
     @Subscribe(priority = 2)
     public void onPreGameTick(final PreGameTickEvent event) {
+        if (mc.player == null || mc.world == null) {
+            return;
+        }
+
         if (mode.getValue() == Mode.HEYPIXEL) {
             handleHeypixelTick();
         } else {
@@ -233,6 +245,10 @@ public final class KillAuraModule extends Module {
     }
 
     private void handleHeypixelTick() {
+        if (mc.player == null || mc.world == null) {
+            return;
+        }
+
         findHeypixelTarget();
         if (heypixelTarget != null) {
             heypixelRotateToTarget();
@@ -283,6 +299,10 @@ public final class KillAuraModule extends Module {
 
     @Subscribe
     public void onPostMovementPacket(final PostMovementPacketEvent event) {
+        if (mc.player == null || mc.world == null) {
+            return;
+        }
+
         if (mode.getValue() != Mode.HYPIXEL || !this.settings.isTickLookahead()) {
             return;
         }
@@ -292,7 +312,7 @@ public final class KillAuraModule extends Module {
     }
 
     private boolean shouldRunHypixel() {
-        if (mc.player == null) {
+        if (mc.player == null || mc.world == null) {
             return false;
         }
 
@@ -319,6 +339,10 @@ public final class KillAuraModule extends Module {
     }
 
     private void findHeypixelTarget() {
+        if (mc.player == null || mc.world == null) {
+            return;
+        }
+
         final double range = heypixelAimRange.getValue();
         final CurrentTarget currentTarget = this.targeting.getRotationTarget();
 
