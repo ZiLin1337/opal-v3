@@ -105,6 +105,43 @@ public final class SaveUtility {
     }
 
     public static void saveConfig(final String name) {
+        try {
+            if (!DIRECTORY.exists()) {
+                DIRECTORY.mkdir();
+            }
+
+            final File file = new File(DIRECTORY, "configs");
+            if (!file.exists()) {
+                file.mkdir();
+            }
+
+            final File configFile = new File(file, name + ".json");
+            final JsonArray configArray = new JsonArray();
+
+            for (final Module module : OpalClient.getInstance().getModuleRepository().getModules()) {
+                final JsonObject moduleJson = new JsonObject();
+                moduleJson.addProperty("name", module.getId());
+                moduleJson.addProperty("enabled", module.isEnabled());
+                moduleJson.addProperty("visible", module.isVisible());
+
+                final JsonArray propertiesArray = new JsonArray();
+                for (final Property<?> property : module.getPropertyList()) {
+                    final JsonObject propertyJson = new JsonObject();
+                    propertyJson.addProperty("name", property.getId());
+                    propertyJson.addProperty("value", property.getValue().toString());
+                    propertiesArray.add(propertyJson);
+                }
+                moduleJson.add("properties", propertiesArray);
+                configArray.add(moduleJson);
+            }
+
+            Files.writeString(
+                    configFile.toPath(),
+                    GSON.toJson(configArray)
+            );
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static boolean loadConfig(final String jsonString) {
