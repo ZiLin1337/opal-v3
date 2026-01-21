@@ -8,7 +8,9 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.minecraft.command.CommandSource;
 import wtf.opal.utility.data.Config;
+import wtf.opal.utility.data.SaveUtility;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public final class ConfigArgumentType implements ArgumentType<String> {
@@ -33,6 +35,10 @@ public final class ConfigArgumentType implements ArgumentType<String> {
 
     @Override
     public <S> CompletableFuture<Suggestions> listSuggestions(final CommandContext<S> context, final SuggestionsBuilder builder) {
-        return null;
+        List<String> configs = SaveUtility.getConfigNames();
+        for (String config : configs) {
+            builder.suggest(config);
+        }
+        return builder.buildFuture();
     }
 }
