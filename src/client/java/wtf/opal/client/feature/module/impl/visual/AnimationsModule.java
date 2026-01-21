@@ -1,15 +1,15 @@
 package wtf.opal.client.feature.module.impl.visual;
 
-import net.minecraft.client.MinecraftClient; // 修复 1: 替换 Minecraft 为 MinecraftClient
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.SwordItem;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerInteractItemC2SPacket;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RotationAxis;
+import wtf.opal.client.OpalClient;
 import wtf.opal.client.feature.module.Module;
 import wtf.opal.client.feature.module.ModuleCategory;
 import wtf.opal.client.feature.module.impl.combat.killaura.KillAuraModule;
@@ -17,16 +17,11 @@ import wtf.opal.client.feature.module.property.impl.GroupProperty;
 import wtf.opal.client.feature.module.property.impl.bool.BooleanProperty;
 import wtf.opal.client.feature.module.property.impl.mode.ModeProperty;
 import wtf.opal.client.feature.module.property.impl.number.NumberProperty;
+import wtf.opal.client.feature.module.repository.ModuleRepository;
 import wtf.opal.event.impl.game.PreGameTickEvent;
+import wtf.opal.event.impl.game.packet.SendPacketEvent;
 import wtf.opal.event.subscriber.Subscribe;
 import wtf.opal.utility.player.BlockUtility;
-
-// 修复 2: 修改 PacketEvent 导入路径
-// 注意：ReceivePacketEvent 通常用于接收(S2C)包。
-// 如果你要拦截玩家发送(C2S)的格挡包，通常应该使用 SendPacketEvent。
-// 这里为了解决编译错误，我导入了这两个，请根据你的 Opal 事件系统确认使用哪一个。
-import wtf.opal.event.impl.game.packet.ReceivePacketEvent;
-import wtf.opal.event.impl.game.packet.SendPacketEvent;
 
 import static wtf.opal.client.Constants.mc;
 
@@ -34,7 +29,7 @@ public final class AnimationsModule extends Module {
 
     // --- 属性设置 ---
     private final BooleanProperty swordBlocking = new BooleanProperty("Enabled", true);
-    private final ModeProperty<BlockMode> blockAnimationMode = new ModeProperty<>("Block animation", BlockMode.class, BlockMode.V1_7).hideIf(() -> !swordBlocking.getValue());
+    private final ModeProperty<BlockMode> blockAnimationMode = new ModeProperty<>("Block animation", BlockMode.V1_7).hideIf(() -> !swordBlocking.getValue());
 
     // Fake Block / Aura Block 属性
     public final BooleanProperty auraAutoBlock = new BooleanProperty("Aura Auto Block", true);
@@ -106,12 +101,13 @@ public final class AnimationsModule extends Module {
     }
 
     /**
-     * 获取 KillAura 模块实例 (使用了安全的反射/单例获取，请确保 wtf.opal.client.Client 存在)
+     * 获取 KillAura 模块实例 (使用了安全的反射/单例获取，请确保 OpalClient 存在)
      */
     private KillAuraModule getKillAura() {
         if (this.killAuraModule == null) {
             try {
-                this.killAuraModule = (KillAuraModule) wtf.opal.client.Client.INSTANCE.getModuleManager().get(KillAuraModule.class);
+                final ModuleRepository moduleRepository = OpalClient.getInstance().getModuleRepository();
+                this.killAuraModule = moduleRepository.getModule(KillAuraModule.class);
             } catch (Exception e) {
                 return null;
             }
@@ -144,7 +140,7 @@ public final class AnimationsModule extends Module {
         if (event.getPacket() instanceof PlayerInteractItemC2SPacket) {
             // 如果处于 Fake Block 状态且手持剑，拦截包
             if (isAuraFakeBlocking() && isHoldingSword(mc.player)) {
-                event.setCancelled(true);
+                event.setCancelled();
             }
         }
     }
