@@ -16,6 +16,8 @@ import wtf.opal.client.feature.module.impl.combat.killaura.KillAuraModule;
 import wtf.opal.client.feature.module.impl.combat.killaura.KillAuraSettings;
 import wtf.opal.client.feature.module.impl.combat.killaura.target.KillAuraTargeting;
 import wtf.opal.client.feature.module.property.impl.number.NumberProperty;
+// 假设 AnimationsModule 可以被访问到
+import wtf.opal.client.feature.module.impl.visual.AnimationsModule;
 import wtf.opal.event.impl.game.PreGameTickEvent;
 import wtf.opal.event.subscriber.Subscribe;
 import wtf.opal.utility.player.PlayerUtility;
@@ -41,9 +43,17 @@ public final class HeypixelKillAura extends KillAuraMode {
     private long lastAttackTime;
     private LivingEntity target;
 
+    // 【需要根据你的框架调整】AnimationsModule 的实例
+    // *** 请将下面这行替换成你框架中获取 AnimationsModule 的正确代码 ***
+    private final AnimationsModule animationsModule;
+
+
     public HeypixelKillAura(KillAuraModule module) {
         super(module);
         module.addProperties(aimRange, cps, rotationSpeed);
+
+        // 临时初始化为 null，你需要在这里替换成实际的获取逻辑
+        this.animationsModule = null;
     }
 
     @Override
@@ -92,21 +102,18 @@ public final class HeypixelKillAura extends KillAuraMode {
 
         this.target = this.findTarget();
         if (this.target == null) {
-            // 如果没有目标，重置旋转（可选，视具体需求而定）
             return;
         }
 
-        // 1. 计算看向目标的理论角度
+        // 1. 计算看向目标的理论角度 (这是解决视角锁定的关键步骤)
         final Vec2f rotation = RotationUtility.getVanillaRotation(
                 RotationUtility.getRotationFromPosition(PlayerUtility.getClosestVectorToBoundingBox(mc.player.getEyePos(), this.target))
         );
 
-        // 2. 将角度提交给 RotationHelper 处理（这通常处理平滑和发包）
-        // 如果 Opal 的 RotationHelper 支持 Silent 模式，这里就不会强制转头
+        // 2. 提交旋转给 RotationHelper 处理
         RotationHelper.getHandler().rotate(rotation, new LinearRotationModel(this.rotationSpeed.getValue()));
 
-        // 3. 核心修复：使用计算出的 rotation 进行射线检测，而不是使用玩家当前的视角
-        // 这样即使视角没锁住（Silent模式），或者视角还在平滑移动中，只要计算判定通过就会攻击
+        // 3. 使用计算出的 rotation 进行射线检测 (解决“只有瞄准才打”的问题)
         if (!this.canHitTarget(this.target, rotation)) {
             return;
         }
@@ -154,12 +161,10 @@ public final class HeypixelKillAura extends KillAuraMode {
         return closest;
     }
 
-    // 修复后的检测方法：接收一个 rotation 参数，而不是读取 mc.player
     private boolean canHitTarget(final LivingEntity target, final Vec2f rotation) {
-        // 使用配置的攻击距离，或者默认距离
         final double attackRange = this.aimRange.getValue();
 
-        // 使用传入的 rotation (目标角度) 进行射线检测
+        // 使用计算出的 rotation (目标角度) 进行射线检测
         final EntityHitResult hitResult = RaycastUtility.raycastEntity(
                 attackRange,
                 1.0F,
@@ -176,16 +181,32 @@ public final class HeypixelKillAura extends KillAuraMode {
             return;
         }
 
+        // **【Fake Block 关联与抖动】**
+        // 检查 animationsModule 是否可用且处于 Fake Blocking 状态 (即 KA 正在触发自动格挡)
+        boolean isFakeBlocking = animationsModule != null
+                && animationsModule.isEnabled()
+                && animationsModule.isAuraFakeBlocking(); // 假设这是 AnimationsModule 中判断 KA 自动格挡的方法
+
         final long time = System.currentTimeMillis();
         final double baseDelay = 1000.0 / this.cps.getValue();
 
-        // 增加随机延迟，模仿参考代码逻辑
         long delay = (long) (baseDelay + (Math.random() - 0.5) * baseDelay * 0.4);
 
-        if (time - lastAttackTime >= delay) {
-            mc.interactionManager.attackEntity(mc.player, target);
-            mc.player.swingHand(Hand.MAIN_HAND);
-            lastAttackTime = time;
+        if (isFakeBlocking) {
+            // 假防砍逻辑：在满足 CPS 限制的情况下进行攻击，此时依赖 AnimationsModule
+            // 来处理包发送和渲染，以模拟快速的攻击/格挡动作。
+            if (time - lastAttackTime >= delay) {
+                mc.interactionManager.attackEntity(mc.player, target);
+                mc.player.swingHand(Hand.MAIN_HAND); // 触发客户端挥手
+                lastAttackTime = time;
+            }
+        } else {
+            // 普通逻辑
+            if (time - lastAttackTime >= delay) {
+                mc.interactionManager.attackEntity(mc.player, target);
+                mc.player.swingHand(Hand.MAIN_HAND);
+                lastAttackTime = time;
+            }
         }
     }
 }
