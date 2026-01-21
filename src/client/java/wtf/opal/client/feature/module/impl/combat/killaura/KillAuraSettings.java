@@ -50,27 +50,12 @@ public final class KillAuraSettings {
         this.visuals = new MultipleBooleanProperty("Visuals",
                 new BooleanProperty("Box", false)
         );
-
-        // Hide all Hypixel-specific properties when in Heypixel mode
-        rotationProperty.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
-        targetProperty.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
-        cpsProperty.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
-        swingCpsProperty.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
-        rotationRange.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
-        swingRange.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
-        hideFakeSwings.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
-        requireAttackKey.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
-        requireWeapon.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
-        overrideRaycast.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
-        tickLookahead.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
-        targetingMode.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
-        fov.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
-        visuals.hideIf(() -> module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL);
-
-        // 注意：这里删除了 module.addProperties(...)
     }
 
-    // 新增方法：手动注册属性
+    /**
+     * Register properties to the module.
+     * This method should be called by mode implementations.
+     */
     public void registerProperties() {
         module.addProperties(
                 rotationProperty.get(),
