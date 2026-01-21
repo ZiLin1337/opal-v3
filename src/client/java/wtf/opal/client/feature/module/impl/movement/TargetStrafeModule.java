@@ -3,6 +3,7 @@ package wtf.opal.client.feature.module.impl.movement;
 import com.ibm.icu.impl.Pair;
 import net.minecraft.client.option.Perspective;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
@@ -74,6 +75,11 @@ public final class TargetStrafeModule extends Module {
         active = true;
 
         final LivingEntity target = this.getKillAuraTarget();
+        // 新增：检查target是否为null，避免空指针
+        if (target == null) {
+            active = false;
+            return;
+        }
 
         if (mc.player.horizontalCollision) {
             if (!colliding) {
@@ -115,8 +121,19 @@ public final class TargetStrafeModule extends Module {
         this.yaw = RotationUtility.getRotationFromPosition(positionToMove).x;
     }
 
+    // 核心修改：修复类型转换问题，增加类型检查和空值处理
     private LivingEntity getKillAuraTarget() {
-        return OpalClient.getInstance().getModuleRepository().getModule(KillAuraModule.class).getTargetEntity();
+        KillAuraModule killAuraModule = OpalClient.getInstance().getModuleRepository().getModule(KillAuraModule.class);
+        // 1. 获取原始的Entity类型目标
+        Entity targetEntity = killAuraModule.getTargetEntity();
+
+        // 2. 检查：如果目标为空，或不是LivingEntity实例，返回null
+        if (targetEntity == null || !(targetEntity instanceof LivingEntity)) {
+            return null;
+        }
+
+        // 3. 显式转换为LivingEntity类型并返回
+        return (LivingEntity) targetEntity;
     }
 
     @Subscribe
@@ -126,6 +143,11 @@ public final class TargetStrafeModule extends Module {
         }
 
         final LivingEntity target = this.getKillAuraTarget();
+        // 新增：检查target是否为null，避免渲染时空指针
+        if (target == null) {
+            return;
+        }
+
         final Vec3d position = MathUtility.interpolate(target, event.tickDelta());
 
         final int blackColor = 0xFF000000;
