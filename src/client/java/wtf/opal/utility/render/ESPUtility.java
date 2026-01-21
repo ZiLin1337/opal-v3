@@ -96,7 +96,7 @@ public class ESPUtility {
 
         matrixStack.multiplyPositionMatrix(mc.gameRenderer.getBasicProjectionMatrix(fov));
 
-        gameRendererAccessor.callTiltViewWhenHurt(matrixStack, camera.getLastTickProgress());
+        gameRendererAccessor.callTiltViewWhenHurt(camera.getLastTickProgress(), true, matrixStack.peek().getPositionMatrix());
 
         if (mc.options.getBobView().getValue())
             gameRendererAccessor.callBobView(matrixStack, camera.getLastTickProgress());

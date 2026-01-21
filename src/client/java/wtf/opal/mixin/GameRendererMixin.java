@@ -113,7 +113,7 @@ public abstract class GameRendererMixin {
             at = @At("HEAD"),
             cancellable = true
     )
-    private void hookTiltViewWhenHurt(MatrixStack matrices, float tickDelta, CallbackInfo ci) {
+    private void hookTiltViewWhenHurt(float tickDelta, boolean flag, Matrix4f matrix, CallbackInfo ci) {
         if (OpalClient.getInstance().getModuleRepository().getModule(NoHurtCameraModule.class).isEnabled()) {
             ci.cancel();
         }
