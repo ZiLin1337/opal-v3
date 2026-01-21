@@ -26,9 +26,11 @@ import wtf.opal.utility.render.ColorUtility;
 import wtf.opal.utility.render.CustomRenderLayers;
 
 import java.awt.*;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static wtf.opal.client.Constants.mc;
@@ -44,7 +46,7 @@ public final class NoxzVelocity extends VelocityMode {
             .hideIf(() -> this.module.getActiveMode() != this);
 
     private final Queue<Packet<ClientPlayPacketListener>> packetQueue = new ConcurrentLinkedQueue<>();
-    private final Map<Integer, Vec3d> entityPositions = new HashMap<>();
+    private final Map<Integer, Vec3d> entityPositions = new ConcurrentHashMap<>();
     private final Stopwatch stopwatch = new Stopwatch();
 
     private VelocityStage stage = VelocityStage.NONE;
@@ -205,14 +207,23 @@ public final class NoxzVelocity extends VelocityMode {
 
     @Subscribe
     public void onRenderWorld(RenderWorldEvent event) {
-        if (stage == VelocityStage.NONE || entityPositions.isEmpty()) return;
+        if (mc.world == null || stage == VelocityStage.NONE || entityPositions.isEmpty()) return;
 
         VertexConsumerProvider.Immediate vcp = VertexConsumerProvider.immediate(new BufferAllocator(1024));
         WorldRenderer worldRenderer = new WorldRenderer(vcp);
 
+        List<Map.Entry<Integer, Vec3d>> entries = new ArrayList<>(entityPositions.entrySet());
+        List<Integer> staleEntityIds = null;
+
         // Render "Ghost" entities (Where they actually are vs where they look like they are)
-        for (Map.Entry<Integer, Vec3d> entry : entityPositions.entrySet()) {
+        for (Map.Entry<Integer, Vec3d> entry : entries) {
             Entity entity = mc.world.getEntityById(entry.getKey());
+            if (entity == null) {
+                if (staleEntityIds == null) staleEntityIds = new ArrayList<>();
+                staleEntityIds.add(entry.getKey());
+                continue;
+            }
+
             if (entity instanceof PlayerEntity && entity != mc.player) {
                 Vec3d pos = entry.getValue();
 
@@ -228,6 +239,10 @@ public final class NoxzVelocity extends VelocityMode {
                         ColorUtility.applyOpacity(intColor, 0.25F)
                 );
             }
+        }
+
+        if (staleEntityIds != null) {
+            staleEntityIds.forEach(entityPositions::remove);
         }
 
         vcp.draw();
