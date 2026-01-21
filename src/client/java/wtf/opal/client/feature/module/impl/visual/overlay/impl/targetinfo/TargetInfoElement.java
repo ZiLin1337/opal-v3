@@ -61,12 +61,12 @@ public final class TargetInfoElement implements IOverlayElement {
     private static final NVGTextRenderer MEDIUM_FONT = FontRepository.getFont("productsans-medium");
     private static final NVGTextRenderer ICON_FONT = FontRepository.getFont("materialicons-regular");
 
+    // --- 修改开始：路径已更正为你实际的文件位置 ---
     private static final NVGTextRenderer CJK_FONT = FontRepository.getOptionalFontFromResources(
             "minecraft-unifont",
-            "assets/minecraft/font/unifont.ttf",
-            "assets/minecraft/font/unifont_all_no_pua.ttf",
-            "assets/minecraft/font/unifont_all.ttf"
+            "assets/opal/fonts/unifont.ttf" // 这里已经修改为正确的路径
     );
+    // --- 修改结束 ---
 
     private static final DecimalFormat HEALTH_DF = new DecimalFormat("0.#");
 
@@ -194,7 +194,7 @@ public final class TargetInfoElement implements IOverlayElement {
                     NVGRenderer.roundedRectGradient(
                             x + padding - 0.125F, y + 24.75F,
                             trueHealthPercent * healthBarWidth, 4, 5 / 3F,
-                         Color.TRANSLUCENT, ColorUtility.applyOpacity(0xFF000000, 0.6F), 90
+                            Color.TRANSLUCENT, ColorUtility.applyOpacity(0xFF000000, 0.6F), 90
                     );
                 }
             }
