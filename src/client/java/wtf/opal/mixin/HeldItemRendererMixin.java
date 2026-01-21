@@ -112,7 +112,7 @@ public abstract class HeldItemRendererMixin {
     private void applySwordBlockingTransformation(AbstractClientPlayerEntity player, float tickProgress, float pitch, Hand hand, float swingProgress, ItemStack item, float equipProgress, MatrixStack matrices, OrderedRenderCommandQueue orderedRenderCommandQueue, int light, CallbackInfo ci) {
         final AnimationsModule animationsModule = OpalClient.getInstance().getModuleRepository().getModule(AnimationsModule.class);
 
-        if (animationsModule.isEnabled() && animationsModule.isSwordBlocking() && (BlockUtility.isForceBlockUseState(player) || BlockUtility.isBlockUseState(player) || BlockUtility.isNoSlowBlockingState())) {
+        if (animationsModule.isEnabled() && animationsModule.isSwordBlocking() && (BlockUtility.isForceBlockUseState(player) || BlockUtility.isBlockUseState(player) || BlockUtility.isNoSlowBlockingState() || BlockUtility.shouldShowFakeBlock(player))) {
             animationsModule.applyTransformations(matrices, swingProgress);
         }
     }
