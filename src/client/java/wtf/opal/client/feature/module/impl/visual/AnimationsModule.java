@@ -1,21 +1,38 @@
 package wtf.opal.client.feature.module.impl.visual;
 
+import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.registry.tag.ItemTags;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RotationAxis;
+import wtf.opal.client.OpalClient;
+import wtf.opal.client.feature.helper.impl.player.mouse.MouseHelper;
 import wtf.opal.client.feature.module.Module;
 import wtf.opal.client.feature.module.ModuleCategory;
+import wtf.opal.client.feature.module.impl.combat.killaura.KillAuraModule;
 import wtf.opal.client.feature.module.property.impl.GroupProperty;
 import wtf.opal.client.feature.module.property.impl.bool.BooleanProperty;
 import wtf.opal.client.feature.module.property.impl.mode.ModeProperty;
 import wtf.opal.client.feature.module.property.impl.number.NumberProperty;
+import wtf.opal.event.EventDispatcher;
+import wtf.opal.event.impl.render.RenderHandEvent;
+import wtf.opal.event.subscriber.Subscribe;
 import wtf.opal.utility.player.BlockUtility;
+
+import static wtf.opal.client.Constants.mc;
 
 public final class AnimationsModule extends Module {
 
     // Sword blocking
     private final BooleanProperty swordBlocking = new BooleanProperty("Enabled", true);
     private final ModeProperty<BlockMode> blockAnimationMode = new ModeProperty<>("Block animation", BlockMode.V1_7).hideIf(() -> !swordBlocking.getValue());
+
+    // Fake block (visual fake blocking)
+    private final BooleanProperty fakeBlockEnabled = new BooleanProperty("Fake block", false);
+    private final BooleanProperty fakeBlockWithKillAura = new BooleanProperty("With KillAura", true).hideIf(() -> !fakeBlockEnabled.getValue());
 
     // Shields
     private final BooleanProperty alwaysHideShield = new BooleanProperty("Always hidden", true);
@@ -41,7 +58,7 @@ public final class AnimationsModule extends Module {
         super("Animations", "Modifies animations within the game.", ModuleCategory.VISUAL);
         setEnabled(true);
         addProperties(
-                new GroupProperty("Sword blocking", swordBlocking, blockAnimationMode),
+                new GroupProperty("Sword blocking", swordBlocking, blockAnimationMode, fakeBlockEnabled, fakeBlockWithKillAura),
                 new GroupProperty("Shields", alwaysHideShield, hideShieldSlotInHotbar),
                 new GroupProperty("Player", oldBackwardsWalking, oldArmorDamageTint, oldSneaking, fixPoseRepeat),
                 new GroupProperty(
@@ -50,6 +67,7 @@ public final class AnimationsModule extends Module {
                         oldCooldownAnimation, swingWhileUsing, hideDropSwing, equipOffset
                 )
         );
+        EventDispatcher.subscribe(this);
     }
 
     public boolean isHideDropSwing() {
@@ -110,6 +128,60 @@ public final class AnimationsModule extends Module {
 
     public boolean isSwingWhileUsing() {
         return this.swingWhileUsing.getValue();
+    }
+
+    public boolean isFakeBlockEnabled() {
+        return this.fakeBlockEnabled.getValue();
+    }
+
+    public boolean isFakeBlockWithKillAura() {
+        return this.fakeBlockWithKillAura.getValue();
+    }
+
+    @Subscribe
+    public void onRenderHand(final RenderHandEvent event) {
+        if (!isEnabled() || !isFakeBlockEnabled()) {
+            return;
+        }
+
+        if (event.hand() != Hand.MAIN_HAND) {
+            return;
+        }
+
+        final ItemStack mainHandStack = mc.player.getMainHandStack();
+        if (!mainHandStack.isIn(ItemTags.SWORDS)) {
+            return;
+        }
+
+        final boolean isRightClicking = MouseHelper.getRightButton().isPressed();
+        final boolean hasKillAuraTarget = getKillAuraTarget() != null;
+
+        if (!isRightClicking && (!hasKillAuraTarget || !isFakeBlockWithKillAura())) {
+            return;
+        }
+
+        if (BlockUtility.isBlockUseState(mc.player) || BlockUtility.isForceBlockUseState(mc.player) || BlockUtility.isNoSlowBlockingState()) {
+            return;
+        }
+
+        event.setCanceled(true);
+
+        applyTransformations(event.matrixStack(), 0.0f);
+
+        mc.gameRenderer.renderItem(mc.player, mainHandStack, net.minecraft.item.ItemDisplayContext.FIRST_PERSON, false, event.matrixStack(), event.vertexConsumers(), mc.getEntityRenderDispatcher().getLight(mc.player, mc.getTickDelta()), 0);
+    }
+
+    private LivingEntity getKillAuraTarget() {
+        final KillAuraModule killAuraModule = OpalClient.getInstance().getModuleRepository().getModule(KillAuraModule.class);
+        if (!killAuraModule.isEnabled()) {
+            return null;
+        }
+
+        final net.minecraft.entity.Entity target = killAuraModule.getTargetEntity();
+        if (target instanceof LivingEntity livingEntity) {
+            return livingEntity;
+        }
+        return null;
     }
 
     public void applyTransformations(final MatrixStack matrices, final float swingProgress) {
