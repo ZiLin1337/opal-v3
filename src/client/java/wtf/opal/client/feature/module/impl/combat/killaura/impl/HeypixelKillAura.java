@@ -3,6 +3,7 @@ package wtf.opal.client.feature.module.impl.combat.killaura.impl;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Hand;
+import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.math.Vec2f;
 import wtf.opal.client.feature.helper.impl.LocalDataWatch;
 import wtf.opal.client.feature.helper.impl.player.rotation.RotationHelper;
@@ -91,16 +92,22 @@ public final class HeypixelKillAura extends KillAuraMode {
 
         this.target = this.findTarget();
         if (this.target == null) {
+            // 如果没有目标，重置旋转（可选，视具体需求而定）
             return;
         }
 
+        // 1. 计算看向目标的理论角度
         final Vec2f rotation = RotationUtility.getVanillaRotation(
                 RotationUtility.getRotationFromPosition(PlayerUtility.getClosestVectorToBoundingBox(mc.player.getEyePos(), this.target))
         );
 
+        // 2. 将角度提交给 RotationHelper 处理（这通常处理平滑和发包）
+        // 如果 Opal 的 RotationHelper 支持 Silent 模式，这里就不会强制转头
         RotationHelper.getHandler().rotate(rotation, new LinearRotationModel(this.rotationSpeed.getValue()));
 
-        if (!this.isRotationValid(this.target)) {
+        // 3. 核心修复：使用计算出的 rotation 进行射线检测，而不是使用玩家当前的视角
+        // 这样即使视角没锁住（Silent模式），或者视角还在平滑移动中，只要计算判定通过就会攻击
+        if (!this.canHitTarget(this.target, rotation)) {
             return;
         }
 
@@ -147,13 +154,20 @@ public final class HeypixelKillAura extends KillAuraMode {
         return closest;
     }
 
-    private boolean isRotationValid(final LivingEntity target) {
-        final double attackRange = mc.player.getEntityInteractionRange();
+    // 修复后的检测方法：接收一个 rotation 参数，而不是读取 mc.player
+    private boolean canHitTarget(final LivingEntity target, final Vec2f rotation) {
+        // 使用配置的攻击距离，或者默认距离
+        final double attackRange = this.aimRange.getValue();
 
-        final float yaw = RotationHelper.getClientHandler().getYawOr(mc.player.getYaw());
-        final float pitch = RotationHelper.getClientHandler().getPitchOr(mc.player.getPitch());
+        // 使用传入的 rotation (目标角度) 进行射线检测
+        final EntityHitResult hitResult = RaycastUtility.raycastEntity(
+                attackRange,
+                1.0F,
+                rotation.x, // Yaw
+                rotation.y, // Pitch
+                entity -> entity == target
+        );
 
-        final var hitResult = RaycastUtility.raycastEntity(attackRange, 1.0F, yaw, pitch, entity -> entity == target);
         return hitResult != null && hitResult.getEntity() == target;
     }
 
@@ -163,8 +177,9 @@ public final class HeypixelKillAura extends KillAuraMode {
         }
 
         final long time = System.currentTimeMillis();
-
         final double baseDelay = 1000.0 / this.cps.getValue();
+
+        // 增加随机延迟，模仿参考代码逻辑
         long delay = (long) (baseDelay + (Math.random() - 0.5) * baseDelay * 0.4);
 
         if (time - lastAttackTime >= delay) {
