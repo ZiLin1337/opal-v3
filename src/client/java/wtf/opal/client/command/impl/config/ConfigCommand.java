@@ -7,6 +7,8 @@ import wtf.opal.client.command.arguments.ConfigArgumentType;
 import wtf.opal.utility.data.SaveUtility;
 import wtf.opal.utility.misc.chat.ChatUtility;
 
+import java.util.List;
+
 import static com.mojang.brigadier.Command.SINGLE_SUCCESS;
 
 public final class ConfigCommand extends Command {
@@ -29,8 +31,15 @@ public final class ConfigCommand extends Command {
         })));
 
         builder.then(literal("list").executes(context -> {
-            // TODO: Implement config listing functionality
-            ChatUtility.print("Config listing not implemented yet");
+            final List<String> configNames = SaveUtility.getConfigNames();
+            if (configNames.isEmpty()) {
+                ChatUtility.print("No configurations found");
+            } else {
+                ChatUtility.print("Available configurations:");
+                for (String configName : configNames) {
+                    ChatUtility.print("  - " + configName);
+                }
+            }
             
             return SINGLE_SUCCESS;
         }));
@@ -38,8 +47,11 @@ public final class ConfigCommand extends Command {
         builder.then(literal("load").then(argument("config_name", ConfigArgumentType.create()).executes(context -> {
             final String configName = context.getArgument("config_name", String.class).toLowerCase();
             
-            // TODO: Implement config loading functionality
-            ChatUtility.print("Config loading not implemented yet");
+            if (SaveUtility.loadConfigFromFile(configName)) {
+                ChatUtility.success("Successfully loaded config: " + configName);
+            } else {
+                ChatUtility.error("Failed to load config: " + configName + ". Make sure the config exists.");
+            }
 
             return SINGLE_SUCCESS;
         })));
@@ -47,8 +59,11 @@ public final class ConfigCommand extends Command {
         builder.then(literal("delete").then(argument("config_name", ConfigArgumentType.create()).executes(context -> {
             final String configName = context.getArgument("config_name", String.class).toLowerCase();
             
-            // TODO: Implement config deletion functionality
-            ChatUtility.print("Config deletion not implemented yet");
+            if (SaveUtility.deleteConfig(configName)) {
+                ChatUtility.success("Successfully deleted config: " + configName);
+            } else {
+                ChatUtility.error("Failed to delete config: " + configName + ". Make sure the config exists.");
+            }
 
             return SINGLE_SUCCESS;
         })));

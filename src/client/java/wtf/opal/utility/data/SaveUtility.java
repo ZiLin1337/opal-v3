@@ -186,6 +186,34 @@ public final class SaveUtility {
         return false;
     }
 
+    public static boolean loadConfigFromFile(final String configName) {
+        try {
+            final File configFile = new File(new File(DIRECTORY, "configs"), configName + ".json");
+            if (!configFile.exists()) {
+                return false;
+            }
+
+            final String jsonContent = Files.readString(configFile.toPath());
+            return loadConfig(jsonContent);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static boolean deleteConfig(final String configName) {
+        try {
+            final File configFile = new File(new File(DIRECTORY, "configs"), configName + ".json");
+            if (configFile.exists()) {
+                return configFile.delete();
+            }
+            return false;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public static List<String> getConfigNames() {
         final File configsDir = new File(DIRECTORY, "configs");
         if (!configsDir.exists()) {
