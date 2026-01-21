@@ -186,4 +186,21 @@ public final class SaveUtility {
         return false;
     }
 
+    public static List<String> getConfigNames() {
+        final File configsDir = new File(DIRECTORY, "configs");
+        if (!configsDir.exists()) {
+            return List.of();
+        }
+        
+        final File[] configFiles = configsDir.listFiles((dir, name) -> name.endsWith(".json"));
+        if (configFiles == null) {
+            return List.of();
+        }
+        
+        return java.util.Arrays.stream(configFiles)
+                .map(file -> file.getName().replace(".json", ""))
+                .sorted()
+                .toList();
+    }
+
 }
