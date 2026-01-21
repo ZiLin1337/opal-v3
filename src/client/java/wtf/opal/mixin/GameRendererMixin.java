@@ -109,17 +109,6 @@ public abstract class GameRendererMixin {
     }
 
     @Inject(
-            method = "tiltViewWhenHurt",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void hookTiltViewWhenHurt(float tickDelta, boolean flag, Matrix4f matrix, CallbackInfo ci) {
-        if (OpalClient.getInstance().getModuleRepository().getModule(NoHurtCameraModule.class).isEnabled()) {
-            ci.cancel();
-        }
-    }
-
-    @Inject(
             method = "renderHand",
             at = @At("HEAD"),
             cancellable = true
