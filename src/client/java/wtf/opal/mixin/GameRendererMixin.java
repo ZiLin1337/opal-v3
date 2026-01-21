@@ -11,6 +11,7 @@ import net.minecraft.client.gui.RotatingCubeMapRenderer;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.ObjectAllocator;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Vec3d;
@@ -26,6 +27,7 @@ import wtf.opal.client.feature.module.impl.combat.PiercingModule;
 import wtf.opal.client.feature.module.impl.visual.NoHurtCameraModule;
 import wtf.opal.client.renderer.shader.ShaderFramebuffer;
 import wtf.opal.event.EventDispatcher;
+import wtf.opal.event.impl.render.RenderHandEvent;
 import wtf.opal.event.impl.render.RenderWorldEvent;
 import wtf.opal.utility.player.RaycastUtility;
 
@@ -114,6 +116,19 @@ public abstract class GameRendererMixin {
     )
     private void hookTiltViewWhenHurt(MatrixStack matrices, float tickDelta, CallbackInfo ci) {
         if (OpalClient.getInstance().getModuleRepository().getModule(NoHurtCameraModule.class).isEnabled()) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(
+            method = "renderHand",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void hookRenderHand(MatrixStack matrices, VertexConsumerProvider.Immediate vertexConsumers, int light, CallbackInfo ci) {
+        final RenderHandEvent event = new RenderHandEvent(Hand.MAIN_HAND, matrices, vertexConsumers, light);
+        EventDispatcher.dispatch(event);
+        if (event.isCanceled()) {
             ci.cancel();
         }
     }
