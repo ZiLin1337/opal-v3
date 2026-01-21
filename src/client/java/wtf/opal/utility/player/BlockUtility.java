@@ -16,6 +16,7 @@ import wtf.opal.client.OpalClient;
 import wtf.opal.client.feature.helper.impl.player.mouse.MouseHelper;
 import wtf.opal.client.feature.helper.impl.player.slot.SlotHelper;
 import wtf.opal.client.feature.module.impl.combat.BlockModule;
+import wtf.opal.client.feature.module.impl.combat.killaura.KillAuraModule;
 import wtf.opal.client.feature.module.impl.movement.noslow.NoSlowModule;
 import wtf.opal.client.feature.module.impl.movement.noslow.impl.WatchdogNoSlow;
 import wtf.opal.client.feature.module.impl.visual.AnimationsModule;
@@ -88,6 +89,34 @@ public final class BlockUtility {
 
         if (livingEntity instanceof PlayerEntity player && (isBlockUseState(player) || isForceBlockUseState(player))) {
             return true;
+        }
+
+        return false;
+    }
+
+    public static boolean shouldShowFakeBlock(final PlayerEntity player) {
+        final AnimationsModule animationsModule = OpalClient.getInstance().getModuleRepository().getModule(AnimationsModule.class);
+
+        if (!animationsModule.isEnabled() || !animationsModule.isFakeBlockEnabled()) {
+            return false;
+        }
+
+        // 检查是否手持剑
+        if (!player.getMainHandStack().isIn(ItemTags.SWORDS)) {
+            return false;
+        }
+
+        // 检查右键是否被按下（手动防砍）
+        if (MouseHelper.getRightButton().isPressed()) {
+            return true;
+        }
+
+        // 检查 KillAura 是否有目标（自动防砍）
+        if (animationsModule.isFakeBlockWithKillAura()) {
+            KillAuraModule killAuraModule = OpalClient.getInstance().getModuleRepository().getModule(KillAuraModule.class);
+            if (killAuraModule != null && killAuraModule.isEnabled() && killAuraModule.getTargetEntity() != null) {
+                return true;
+            }
         }
 
         return false;

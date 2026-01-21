@@ -338,7 +338,10 @@ public final class TargetInfoElement implements IOverlayElement {
         if (target == null) {
             final KillAuraModule killAuraModule = OpalClient.getInstance().getModuleRepository().getModule(KillAuraModule.class);
             if (killAuraModule.isEnabled()) {
-                target = killAuraModule.getTargetEntity();
+                net.minecraft.entity.Entity targetEntity = killAuraModule.getTargetEntity();
+                if (targetEntity instanceof LivingEntity) {
+                    target = (LivingEntity) targetEntity;
+                }
             }
         }
 
