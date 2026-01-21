@@ -1,5 +1,6 @@
 package wtf.opal.client.feature.module.impl.combat.killaura;
 
+import net.minecraft.entity.LivingEntity;
 import wtf.opal.client.feature.module.Module;
 import wtf.opal.client.feature.module.ModuleCategory;
 import wtf.opal.client.feature.module.impl.combat.killaura.impl.HeypixelKillAura;
@@ -55,6 +56,15 @@ public final class KillAuraModule extends Module {
     public KillAuraTargeting getTargeting() {
         final KillAuraMode activeMode = (KillAuraMode) getActiveMode();
         return activeMode != null ? activeMode.getTargeting() : null;
+    }
+
+    public LivingEntity getTargetEntity() {
+        final KillAuraMode activeMode = (KillAuraMode) getActiveMode();
+        return activeMode != null ? activeMode.getTargetEntity() : null;
+    }
+
+    public boolean isTargetSelected() {
+        return this.getTargetEntity() != null;
     }
 
     public enum Mode {

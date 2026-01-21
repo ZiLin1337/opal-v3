@@ -116,7 +116,7 @@ public final class TargetStrafeModule extends Module {
     }
 
     private LivingEntity getKillAuraTarget() {
-        return OpalClient.getInstance().getModuleRepository().getModule(KillAuraModule.class).getTargeting().getTarget().getEntity();
+        return OpalClient.getInstance().getModuleRepository().getModule(KillAuraModule.class).getTargetEntity();
     }
 
     @Subscribe
@@ -164,7 +164,7 @@ public final class TargetStrafeModule extends Module {
         }
 
         final KillAuraModule killAuraModule = OpalClient.getInstance().getModuleRepository().getModule(KillAuraModule.class);
-        if (!killAuraModule.isEnabled() || !killAuraModule.getTargeting().isTargetSelected()) {
+        if (!killAuraModule.isEnabled() || !killAuraModule.isTargetSelected()) {
             return false;
         }
 

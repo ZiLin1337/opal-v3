@@ -31,25 +31,53 @@ public final class KillAuraSettings {
 
     public KillAuraSettings(final KillAuraModule module) {
         this.module = module;
-        this.rotationProperty = new RotationProperty(InstantRotationModel.INSTANCE);
-        this.targetProperty = new TargetProperty(true, false, false, false, false, true);
-        this.cpsProperty = new CPSProperty(module, "Attack CPS", true);
-        this.swingCpsProperty = new CPSProperty(module, "Swing CPS", false).hideIf(this.cpsProperty::isModernDelay);
 
-        this.rotationRange = new NumberProperty("Rotation range", 5.D, 3.D, 8.D, 0.1D);
-        this.swingRange = new NumberProperty("Swing range", 5.D, 3.D, 8.D, 0.1D).hideIf(this.cpsProperty::isModernDelay);
-        this.hideFakeSwings = new BooleanProperty("Hide fake swings", true).hideIf(this.cpsProperty::isModernDelay);
+        this.rotationProperty = new RotationProperty(InstantRotationModel.INSTANCE)
+                .hideIf(this::isNotHypixelMode);
 
-        this.requireAttackKey = new BooleanProperty("Require attack key", false);
-        this.requireWeapon = new BooleanProperty("Require weapon", false);
-        this.overrideRaycast = new BooleanProperty("Override raycast", true);
-        this.tickLookahead = new BooleanProperty("Tick lookahead", false).hideIf(() -> !this.isOverrideRaycast());
-        this.targetingMode = new ModeProperty<>("Mode", TargetingMode.SWITCH);
-        this.fov = new NumberProperty("FOV", 180, 1, 180, 1);
+        this.targetProperty = new TargetProperty(true, false, false, false, false, true)
+                .hideIf(this::isNotHypixelMode);
+
+        this.cpsProperty = new CPSProperty(module, "Attack CPS", true)
+                .hideIf(this::isNotHypixelMode);
+
+        this.swingCpsProperty = new CPSProperty(module, "Swing CPS", false)
+                .hideIf(() -> this.isNotHypixelMode() || this.cpsProperty.isModernDelay());
+
+        this.rotationRange = new NumberProperty("Rotation range", 5.D, 3.D, 8.D, 0.1D)
+                .hideIf(this::isNotHypixelMode);
+
+        this.swingRange = new NumberProperty("Swing range", 5.D, 3.D, 8.D, 0.1D)
+                .hideIf(() -> this.isNotHypixelMode() || this.cpsProperty.isModernDelay());
+
+        this.hideFakeSwings = new BooleanProperty("Hide fake swings", true)
+                .hideIf(() -> this.isNotHypixelMode() || this.cpsProperty.isModernDelay());
+
+        this.requireAttackKey = new BooleanProperty("Require attack key", false)
+                .hideIf(this::isNotHypixelMode);
+
+        this.requireWeapon = new BooleanProperty("Require weapon", false)
+                .hideIf(this::isNotHypixelMode);
+
+        this.overrideRaycast = new BooleanProperty("Override raycast", true)
+                .hideIf(this::isNotHypixelMode);
+
+        this.tickLookahead = new BooleanProperty("Tick lookahead", false)
+                .hideIf(() -> this.isNotHypixelMode() || !this.isOverrideRaycast());
+
+        this.targetingMode = new ModeProperty<>("Mode", TargetingMode.SWITCH)
+                .hideIf(this::isNotHypixelMode);
+
+        this.fov = new NumberProperty("FOV", 180, 1, 180, 1)
+                .hideIf(this::isNotHypixelMode);
 
         this.visuals = new MultipleBooleanProperty("Visuals",
                 new BooleanProperty("Box", false)
-        );
+        ).hideIf(this::isNotHypixelMode);
+    }
+
+    private boolean isNotHypixelMode() {
+        return this.module.getMode().getValue() != KillAuraModule.Mode.HYPIXEL;
     }
 
     /**
@@ -59,9 +87,16 @@ public final class KillAuraSettings {
     public void registerProperties() {
         module.addProperties(
                 rotationProperty.get(),
-                new GroupProperty("Requirements", requireWeapon, requireAttackKey),
-                targetingMode, rotationRange, swingRange, hideFakeSwings, targetProperty.get(),
-                fov, overrideRaycast, tickLookahead, visuals
+                new GroupProperty("Requirements", requireWeapon, requireAttackKey).hideIf(this::isNotHypixelMode),
+                targetingMode,
+                rotationRange,
+                swingRange,
+                hideFakeSwings,
+                targetProperty.get(),
+                fov,
+                overrideRaycast,
+                tickLookahead,
+                visuals
         );
     }
 

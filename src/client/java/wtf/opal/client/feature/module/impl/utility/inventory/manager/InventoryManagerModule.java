@@ -54,7 +54,7 @@ public final class InventoryManagerModule extends Module {
 
         final KillAuraModule killAuraModule = moduleRepository.getModule(KillAuraModule.class);
         final ScaffoldModule scaffoldModule = moduleRepository.getModule(ScaffoldModule.class);
-        if ((killAuraModule.isEnabled() && killAuraModule.getTargeting().isTargetSelected())
+        if ((killAuraModule.isEnabled() && killAuraModule.isTargetSelected())
                 || scaffoldModule.isEnabled()) {
             return;
         }
