@@ -26,36 +26,21 @@ public final class ScaleProperty {
     }
 
     public float getScale() {
-        final int guiScale = mc.options.getGuiScale().getValue();
-
-        return switch (modeProperty.getValue()) {
-            // 1x
-            case SMALL -> switch (guiScale) {
-                case 2 -> 0.5F;
-                case 3 -> 1 / 3F;
-                default -> 1;
-            };
-            // 2x
-            case NORMAL -> switch (guiScale) {
-                case 1 -> 2;
-                case 3 -> 2 / 3F;
-                default -> 1;
-            };
-            // ~2.67x
-            case MEDIUM -> switch (guiScale) {
-                case 1 -> 2.25F;
-                case 2 -> 1.125F;
-                case 3 -> 0.75F;
-                default -> 1;
-            };
-            // 3x
-            case LARGE -> switch (guiScale) {
-                case 1 -> 3;
-                case 2 -> 1.5F;
-                default -> 1;
-            };
-            default -> 1;
-        };
+        ScaleMode mode = this.modeProperty.getValue();
+        
+        switch (mode) {
+            case SMALL:
+                return 0.5F;
+            case NORMAL:
+                return 1.0F;
+            case MEDIUM:
+                return 1.5F;
+            case LARGE:
+                return 2.0F;
+            case AUTO:
+            default:
+                return 1.0F;
+        }
     }
 
     public enum ScaleMode {
