@@ -40,6 +40,14 @@ public final class ScaffoldSettings {
 
     private final MultipleBooleanProperty hypixelAddons;
 
+    // Telly and Snap specific properties
+    private final BooleanProperty tellyEnabled;
+    private final NumberProperty rotateSpeed;
+    private final NumberProperty rotateBackSpeed;
+    private final NumberProperty tellyTick;
+    private final BooleanProperty snapEnabled;
+    private final BooleanProperty safeWalkEnabled;
+
     public ScaffoldSettings(final ScaffoldModule module) {
         this.movementIntelligence = new BooleanProperty("Enabled", false);
         this.diagonalMovement = new BooleanProperty("Diagonal movement", false);
@@ -67,8 +75,16 @@ public final class ScaffoldSettings {
         this.hypixelAddons = new MultipleBooleanProperty("Hypixel addons",
                 new BooleanProperty("Boost", true)).hideIf(() -> !(LocalDataWatch.get().getKnownServerManager().getCurrentServer() instanceof HypixelServer));
 
-        module.addModuleModes(mode, new VanillaScaffold(module), new WatchdogScaffold(module), new AntiGamingChairScaffold(module), new BloxdScaffold(module));
-        module.addProperties(rotationProperty.get(), mode, switchMode, swingMode, tower, snapRotations, overrideRaycast, sameY, autoJump, blockOverlay, hypixelAddons);
+        // Initialize Telly and Snap properties
+        this.tellyEnabled = new BooleanProperty("Telly", false);
+        this.rotateSpeed = new NumberProperty("Rotate Speed", 10.0f, 1.0f, 20.0f, 0.5f);
+        this.rotateBackSpeed = new NumberProperty("Rotate Back Speed", 15.0f, 1.0f, 30.0f, 0.5f);
+        this.tellyTick = new NumberProperty("Telly Tick", 2, 0, 10, 1);
+        this.snapEnabled = new BooleanProperty("Snap", true);
+        this.safeWalkEnabled = new BooleanProperty("Safe Walk", true);
+
+        module.addModuleModes(mode, new VanillaScaffold(module), new WatchdogScaffold(module), new AntiGamingChairScaffold(module), new BloxdScaffold(module), new TellyScaffold(module), new SnapScaffold(module));
+        module.addProperties(rotationProperty.get(), mode, switchMode, swingMode, tower, snapRotations, overrideRaycast, sameY, autoJump, blockOverlay, hypixelAddons, tellyEnabled, rotateSpeed, rotateBackSpeed, tellyTick, snapEnabled, safeWalkEnabled);
     }
 
     public CPSProperty getSimulationCps() {
@@ -135,6 +151,31 @@ public final class ScaffoldSettings {
         return rotationProperty.createModel();
     }
 
+    // Telly and Snap property getters
+    public boolean isTellyEnabled() {
+        return tellyEnabled.getValue();
+    }
+
+    public float getRotateSpeed() {
+        return rotateSpeed.getValue().floatValue();
+    }
+
+    public float getRotateBackSpeed() {
+        return rotateBackSpeed.getValue().floatValue();
+    }
+
+    public int getTellyTick() {
+        return tellyTick.getValue().intValue();
+    }
+
+    public boolean isSnapEnabled() {
+        return snapEnabled.getValue();
+    }
+
+    public boolean isSafeWalkEnabled() {
+        return safeWalkEnabled.getValue();
+    }
+
     public enum SwitchMode {
         NORMAL("Normal"),
         HOTBAR("Hotbar"),
@@ -172,7 +213,9 @@ public final class ScaffoldSettings {
         VANILLA("Vanilla"),
         ANTI_GAMING_CHAIR("Anti Gaming Chair"),
         WATCHDOG("Watchdog"),
-        BLOXD("Bloxd");
+        BLOXD("Bloxd"),
+        TELLY("Telly"),
+        SNAP("Snap");
 
         private final String name;
 

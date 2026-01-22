@@ -62,6 +62,10 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
     private final ScaffoldIsland dynamicIsland = new ScaffoldIsland(this);
     private final ScaffoldSettings settings = new ScaffoldSettings(this);
 
+    // Scaffold implementation instances
+    private TellyScaffold tellyScaffold;
+    private SnapScaffold snapScaffold;
+
     public BlockData blockCache;
     private int sameYPos;
 
@@ -87,6 +91,10 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
     @Override
     protected void onEnable() {
         super.onEnable();
+
+        // Initialize scaffold implementations
+        tellyScaffold = new TellyScaffold(this);
+        snapScaffold = new SnapScaffold(this);
 
         blockCache = null;
         rotation = null;
@@ -137,6 +145,29 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
                 ((LivingEntityAccessor) mc.player).setJumpingCooldown(0);
                 event.setJump(true);
             }
+        }
+
+        // Delegate to specific scaffold implementation for move input
+        delegateMoveInputToScaffoldImplementation();
+    }
+
+    private void delegateMoveInputToScaffoldImplementation() {
+        if (getActiveMode() == null) return;
+        
+        ScaffoldSettings.Mode currentMode = (ScaffoldSettings.Mode) getActiveMode().getEnumValue();
+        
+        switch (currentMode) {
+            case TELLY:
+                if (tellyScaffold != null) {
+                    tellyScaffold.onMoveInput();
+                }
+                break;
+            case SNAP:
+                if (snapScaffold != null) {
+                    snapScaffold.onMoveInput();
+                }
+                break;
+            // Other modes are handled by their respective ModuleMode implementations
         }
     }
 
@@ -318,6 +349,29 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
                         model
                 );
             }
+        }
+
+        // Delegate to specific scaffold implementation based on mode
+        delegateToScaffoldImplementation();
+    }
+
+    private void delegateToScaffoldImplementation() {
+        if (getActiveMode() == null) return;
+        
+        ScaffoldSettings.Mode currentMode = (ScaffoldSettings.Mode) getActiveMode().getEnumValue();
+        
+        switch (currentMode) {
+            case TELLY:
+                if (tellyScaffold != null) {
+                    tellyScaffold.onPreTick();
+                }
+                break;
+            case SNAP:
+                if (snapScaffold != null) {
+                    snapScaffold.onPreTick();
+                }
+                break;
+            // Other modes are handled by their respective ModuleMode implementations
         }
     }
 
