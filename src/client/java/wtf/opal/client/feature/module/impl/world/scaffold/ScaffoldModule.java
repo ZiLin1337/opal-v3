@@ -62,10 +62,6 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
     private final ScaffoldIsland dynamicIsland = new ScaffoldIsland(this);
     private final ScaffoldSettings settings = new ScaffoldSettings(this);
 
-    // Scaffold implementation instances
-    private TellyScaffold tellyScaffold;
-    private SnapScaffold snapScaffold;
-
     public BlockData blockCache;
     private int sameYPos;
 
@@ -91,10 +87,6 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
     @Override
     protected void onEnable() {
         super.onEnable();
-
-        // Initialize scaffold implementations
-        tellyScaffold = new TellyScaffold(this);
-        snapScaffold = new SnapScaffold(this);
 
         blockCache = null;
         rotation = null;
@@ -158,12 +150,12 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
         
         switch (currentMode) {
             case TELLY:
-                if (tellyScaffold != null) {
+                if (getActiveMode() instanceof TellyScaffold tellyScaffold) {
                     tellyScaffold.onMoveInput();
                 }
                 break;
             case SNAP:
-                if (snapScaffold != null) {
+                if (getActiveMode() instanceof SnapScaffold snapScaffold) {
                     snapScaffold.onMoveInput();
                 }
                 break;
@@ -362,12 +354,12 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
         
         switch (currentMode) {
             case TELLY:
-                if (tellyScaffold != null) {
+                if (getActiveMode() instanceof TellyScaffold tellyScaffold) {
                     tellyScaffold.onPreTick();
                 }
                 break;
             case SNAP:
-                if (snapScaffold != null) {
+                if (getActiveMode() instanceof SnapScaffold snapScaffold) {
                     snapScaffold.onPreTick();
                 }
                 break;

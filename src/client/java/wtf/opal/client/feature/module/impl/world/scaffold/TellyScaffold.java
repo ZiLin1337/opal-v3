@@ -5,24 +5,19 @@ import static wtf.opal.client.Constants.mc;
 
 public final class TellyScaffold extends ScaffoldBase {
 
-    // Telly配置
-    private boolean telly;
-    private float rotateSpeed;
-    private float rotateBackSpeed;
-    private int tellyTick;
+    // Telly配置 - 延迟初始化，从settings动态获取
     private int airTick;
 
     public TellyScaffold(ScaffoldModule module) {
         super(module);
-        this.telly = module.getSettings().isTellyEnabled();
-        this.rotateSpeed = module.getSettings().getRotateSpeed();
-        this.rotateBackSpeed = module.getSettings().getRotateBackSpeed();
-        this.tellyTick = module.getSettings().getTellyTick();
     }
 
     @Override
     public void onPreTick() {
         if (mc.player == null) return;
+
+        // 动态获取配置
+        int tellyTick = module.getSettings().getTellyTick();
 
         // 玩家在地面时重置airTick和blockPos，回退旋转
         if (mc.player.isOnGround()) {
@@ -61,6 +56,8 @@ public final class TellyScaffold extends ScaffoldBase {
     private void executeRotation() {
         // 旋转逻辑实现
         if (rotation != null) {
+            // 动态获取rotateSpeed配置
+            float rotateSpeed = module.getSettings().getRotateSpeed();
             // 根据rotateSpeed执行旋转
         }
     }
