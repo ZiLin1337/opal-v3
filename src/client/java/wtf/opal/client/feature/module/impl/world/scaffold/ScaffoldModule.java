@@ -87,7 +87,9 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
         this.dynamicIsland.onDisable();
         this.placeData = null;
         this.rotation = null;
-        this.realStackSizeMap = null;
+        if (this.realStackSizeMap != null) {
+            this.realStackSizeMap.clear();
+        }
         this.tellyAirTicks = 0;
         this.placeTick = 0;
 
@@ -103,31 +105,40 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
         return settings;
     }
 
+    private Map<Integer, Integer> getRealStackSizeMap() {
+        if (this.realStackSizeMap == null) {
+            this.realStackSizeMap = new HashMap<>();
+        }
+        return this.realStackSizeMap;
+    }
+
     @Subscribe
     public void onBlockPlaced(final BlockPlacedEvent event) {
-        if (mc.player == null || this.realStackSizeMap == null || mc.interactionManager == null) {
+        if (mc.player == null || mc.interactionManager == null) {
             return;
         }
         if (!mc.interactionManager.getCurrentGameMode().isCreative()) {
             final int selectedSlot = mc.player.getInventory().getSelectedSlot();
-            this.realStackSizeMap.put(
+            final Map<Integer, Integer> stackSizeMap = getRealStackSizeMap();
+            stackSizeMap.put(
                     selectedSlot,
-                    this.realStackSizeMap.getOrDefault(selectedSlot, mc.player.getMainHandStack().getCount() + 1) - 1
+                    stackSizeMap.getOrDefault(selectedSlot, mc.player.getMainHandStack().getCount() + 1) - 1
             );
         }
     }
 
     @Subscribe
     public void onReceivePacket(final ReceivePacketEvent event) {
-        if (mc.player == null || this.realStackSizeMap == null) {
+        if (mc.player == null) {
             return;
         }
         if (event.getPacket() instanceof ItemPickupAnimationS2CPacket pickup
                 && pickup.getCollectorEntityId() == mc.player.getId()) {
             final int selectedSlot = mc.player.getInventory().getSelectedSlot();
-            this.realStackSizeMap.put(
+            final Map<Integer, Integer> stackSizeMap = getRealStackSizeMap();
+            stackSizeMap.put(
                     selectedSlot,
-                    this.realStackSizeMap.getOrDefault(selectedSlot, mc.player.getMainHandStack().getCount() - pickup.getStackAmount()) + pickup.getStackAmount()
+                    stackSizeMap.getOrDefault(selectedSlot, mc.player.getMainHandStack().getCount() - pickup.getStackAmount()) + pickup.getStackAmount()
             );
         }
     }
@@ -243,11 +254,6 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
             return;
         }
 
-        // 确保 realStackSizeMap 已初始化
-        if (this.realStackSizeMap == null) {
-            this.realStackSizeMap = new HashMap<>();
-        }
-
         final boolean holdingBlock = isGoodBlockStack(mc.player.getMainHandStack()) || isGoodBlockStack(mc.player.getOffHandStack());
         if (!holdingBlock) {
             MouseHelper.getRightButton().setDisabled();
@@ -349,20 +355,14 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
             return -1;
         }
 
+        final Map<Integer, Integer> stackSizeMap = getRealStackSizeMap();
         for (int i = 0; i < 9; i++) {
             final ItemStack stack = mc.player.getInventory().getMainStacks().get(i);
             if (!isGoodBlockStack(stack)) {
                 continue;
             }
 
-            // 确保 realStackSizeMap 存在且有效
-            final int count;
-            if (this.realStackSizeMap != null) {
-                count = this.realStackSizeMap.getOrDefault(i, stack.getCount());
-            } else {
-                count = stack.getCount();
-            }
-
+            final int count = stackSizeMap.getOrDefault(i, stack.getCount());
             if (count > 0) {
                 return i;
             }
