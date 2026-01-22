@@ -105,16 +105,11 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
         }
     }
 
-    // --- 修复后的渲染方法 ---
     @Subscribe
     public void onRenderWorld(final RenderWorldEvent event) {
-        // 使用 blockCache 而不是 crosshairTarget，确保在 Silent Rotation 时也能渲染
-        if (this.blockCache != null && settings.isBlockOverlayEnabled()) {
-
-            // 获取 Scaffold 计算的目标位置
+        if (this.blockCache != null && settings.isBlockCacheOverlayEnabled()) {
             BlockPos targetPos = this.blockCache.blockWithDirection.blockPos();
 
-            // 确保该位置不是空气 (防止视觉错误)
             if (!mc.world.getBlockState(targetPos).isAir()) {
                 final Vec3d startVec = new Vec3d(targetPos.getX(), targetPos.getY(), targetPos.getZ());
                 final Vec3d dimensions = new Vec3d(1, 1, 1);
@@ -128,7 +123,6 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
             }
         }
     }
-    // ----------------------
 
     @Subscribe(priority = 1)
     public void onMoveInput(final MoveInputEvent event) {
