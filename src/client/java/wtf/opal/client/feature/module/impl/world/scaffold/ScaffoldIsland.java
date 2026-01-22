@@ -18,7 +18,7 @@ public final class ScaffoldIsland {
 
     private final ScaffoldModule parent;
 
-    public ScaffoldIsland(ScaffoldModule parent) {
+    public ScaffoldIsland(final ScaffoldModule parent) {
         this.parent = parent;
     }
 
@@ -26,15 +26,16 @@ public final class ScaffoldIsland {
 
     private Animation blockCounterAnimation;
 
-    public void render(DrawContext context, float posX, float posY) {
+    public void render(final DrawContext context, final float posX, final float posY) {
         final NVGTextRenderer titleFont = FontRepository.getFont("productsans-bold");
         final NVGTextRenderer footerFont = FontRepository.getFont("productsans-medium");
 
         final float titleTextSize = 8;
         final float secondaryTextSize = 6;
 
-        final ItemStack handStack = mc.player.getMainHandStack().getItem() instanceof BlockItem ?
-                mc.player.getMainHandStack() : mc.player.getOffHandStack();
+        final ItemStack handStack = mc.player.getMainHandStack().getItem() instanceof BlockItem
+                ? mc.player.getMainHandStack()
+                : mc.player.getOffHandStack();
         final boolean isBlock = handStack.getItem() instanceof BlockItem;
 
         final int stackSize = isBlock ? handStack.getCount() : 0;
@@ -42,9 +43,11 @@ public final class ScaffoldIsland {
         final String postStackText = "block" + (stackSize != 1 ? "s" : "");
         final String bpsText = MoveUtility.getBlocksPerSecond() + " b/s";
 
-        width = 130 + Math.max(titleFont.getStringWidth(stackText, titleTextSize) + footerFont.getStringWidth(postStackText, titleTextSize), footerFont.getStringWidth(bpsText, secondaryTextSize));
+        width = 130 + Math.max(
+                titleFont.getStringWidth(stackText, titleTextSize) + footerFont.getStringWidth(postStackText, titleTextSize),
+                footerFont.getStringWidth(bpsText, secondaryTextSize)
+        );
 
-        // TODO: replace with scaffold block
         int color = -1;
         if (isBlock) {
             color = ColorUtility.applyOpacity(((BlockItem) handStack.getItem()).getBlock().getDefaultMapColor().color, 255);
