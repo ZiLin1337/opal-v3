@@ -5,21 +5,16 @@ import static wtf.opal.client.Constants.mc;
 
 public final class SnapScaffold extends ScaffoldBase {
 
-    // Snap配置
-    private boolean snap;
-    private float rotateSpeed;
-    private boolean safeWalk;
-
     public SnapScaffold(ScaffoldModule module) {
         super(module);
-        this.snap = module.getSettings().isSnapEnabled();
-        this.rotateSpeed = module.getSettings().getRotateSpeed();
-        this.safeWalk = module.getSettings().isSafeWalkEnabled();
     }
 
     @Override
     public void onPreTick() {
         if (mc.player == null) return;
+
+        // 动态获取配置
+        boolean snap = module.getSettings().isSnapEnabled();
 
         // 当blockPos为null时，设置向后180度的旋转
         if (blockPos == null) {
@@ -37,6 +32,9 @@ public final class SnapScaffold extends ScaffoldBase {
 
     @Override
     public void onMoveInput() {
+        // 动态获取配置
+        boolean safeWalk = module.getSettings().isSafeWalkEnabled();
+
         // SafeWalk防坠逻辑
         if (safeWalk) {
             executeSafeWalk();
@@ -82,6 +80,8 @@ public final class SnapScaffold extends ScaffoldBase {
     private void executeRotation() {
         // 旋转逻辑实现
         if (rotation != null) {
+            // 动态获取rotateSpeed配置
+            float rotateSpeed = module.getSettings().getRotateSpeed();
             // 根据rotateSpeed执行旋转
         }
     }
@@ -95,6 +95,8 @@ public final class SnapScaffold extends ScaffoldBase {
 
     @Override
     public String getSuffix() {
+        // 动态获取snap配置
+        boolean snap = module.getSettings().isSnapEnabled();
         return snap ? "Snap" : "Normal";
     }
 
