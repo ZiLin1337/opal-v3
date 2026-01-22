@@ -105,20 +105,30 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
         }
     }
 
+    // --- 修复后的渲染方法 ---
     @Subscribe
     public void onRenderWorld(final RenderWorldEvent event) {
-        if (mc.crosshairTarget instanceof BlockHitResult blockHitResult && rotation != null && settings.isBlockOverlayEnabled() && !mc.world.getBlockState(blockHitResult.getBlockPos()).isAir()) {
-            final Vec3d startVec = new Vec3d(blockHitResult.getBlockPos().getX(), blockHitResult.getBlockPos().getY(), blockHitResult.getBlockPos().getZ());
-            final Vec3d dimensions = new Vec3d(1, 1, 1);
+        // 使用 blockCache 而不是 crosshairTarget，确保在 Silent Rotation 时也能渲染
+        if (this.blockCache != null && settings.isBlockOverlayEnabled()) {
 
-            VertexConsumerProvider.Immediate vcp = VertexConsumerProvider.immediate(new BufferAllocator(1024));
-            WorldRenderer rc = new WorldRenderer(vcp);
+            // 获取 Scaffold 计算的目标位置
+            BlockPos targetPos = this.blockCache.blockWithDirection.blockPos();
 
-            rc.drawFilledCube(event.matrixStack(), CustomRenderLayers.getPositionColorQuads(true), startVec, dimensions, ColorUtility.applyOpacity(ColorUtility.getClientTheme().first, 0.25F));
+            // 确保该位置不是空气 (防止视觉错误)
+            if (!mc.world.getBlockState(targetPos).isAir()) {
+                final Vec3d startVec = new Vec3d(targetPos.getX(), targetPos.getY(), targetPos.getZ());
+                final Vec3d dimensions = new Vec3d(1, 1, 1);
 
-            vcp.draw();
+                VertexConsumerProvider.Immediate vcp = VertexConsumerProvider.immediate(new BufferAllocator(1024));
+                WorldRenderer rc = new WorldRenderer(vcp);
+
+                rc.drawFilledCube(event.matrixStack(), CustomRenderLayers.getPositionColorQuads(true), startVec, dimensions, ColorUtility.applyOpacity(ColorUtility.getClientTheme().first, 0.25F));
+
+                vcp.draw();
+            }
         }
     }
+    // ----------------------
 
     @Subscribe(priority = 1)
     public void onMoveInput(final MoveInputEvent event) {
@@ -162,7 +172,7 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
                 if (settings.isBlockOverlayEnabled()) {
                     FadingBlockHelper.getInstance().addFadingBlock(
                             new FadingBlockHelper.FadingBlock(
-                                    blockCache.blockWithDirection.blockPos,
+                                    blockCache.blockWithDirection.blockPos(), // 修复：Record 应使用方法访问
                                     Color.BITMASK,
                                     ColorUtility.applyOpacity(ColorUtility.getClientTheme().first, 0.25F),
                                     300
@@ -225,8 +235,6 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
                     return false;
                 }
 
-
-
                 MouseHelper.getRightButton().setPressed();
                 this.settings.getSimulationCps().resetClick();
                 SwingDelay.reset();
@@ -248,12 +256,12 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
             RotationMouseHandler handler = RotationHelper.getHandler();
             if(mc.player != null) {
                 if(rotation != null)
-                handler.rotate(new Vec2f(mc.gameRenderer.getCamera().getYaw() + (44f * Math.signum(rotation.rotation().x)), mc.gameRenderer.getCamera().getPitch()), InstantRotationModel.INSTANCE);
+                    handler.rotate(new Vec2f(mc.gameRenderer.getCamera().getYaw() + (44f * Math.signum(rotation.rotation().x)), mc.gameRenderer.getCamera().getPitch()), InstantRotationModel.INSTANCE);
             }
             this.rotation = null;
             return;
         }
-            // Expand
+        // Expand
         Vec3d expandOffset = null;
 //        if (LocalDataWatch.get().getKnownServerManager().getCurrentServer() instanceof HypixelServer) {
 //            expandOffset = mc.player.getVelocity().withAxis(Direction.Axis.Y, 0.0D);
@@ -281,7 +289,7 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
 
         final ModuleRepository moduleRepository = OpalClient.getInstance().getModuleRepository();
         final boolean updateY = !settings.isSameYEnabled()
-              //  || mc.options.useKey.isPressed()
+                //  || mc.options.useKey.isPressed()
                 || (this.settings.isAutoJump() && PlayerUtility.isKeyPressed(mc.options.jumpKey))
                 || mc.player.isOnGround()
                 || Math.abs(Math.floor(mc.player.getY() - sameYPos)) > 3
@@ -393,7 +401,7 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
         } else {
             sortingAngle = rotation != null ? rotation.rotation() : RotationUtility.getRotation();
         }
-        return RotationUtility.getRotationFromRaycastedBlock(data.blockPos, data.direction, sortingAngle, start);
+        return RotationUtility.getRotationFromRaycastedBlock(data.blockPos(), data.direction(), sortingAngle, start);
     }
 
     private BlockData getBlockData() {
@@ -429,7 +437,7 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
                 return null;
             }
 
-            blockList.sort(Comparator.comparingDouble(data -> data.blockPos.offset(data.direction).getSquaredDistance(targetBlockPos)));
+            blockList.sort(Comparator.comparingDouble(data -> data.blockPos().offset(data.direction()).getSquaredDistance(targetBlockPos)));
 
             final Vec3d eyePos = entity.getEntityPos().add(0.0D, entity.getStandingEyeHeight(), 0.0D);
             for (final BlockWithDirection block : blockList) {
