@@ -64,8 +64,8 @@ public abstract class ScaffoldBase extends ModuleMode<ScaffoldModule> {
 
     public boolean isSolidAndNonInteractive(BlockPos pos) {
         BlockState state = mc.world.getBlockState(pos);
-        // 修复点2：1.21.10中直接用BlockState.getMaterial()
-        return !state.isReplaceable() && !state.getMaterial().isLiquid();
+        // 修复点2：1.21.10中getMaterial()被移除，使用getFluidState().isEmpty()检查液体
+        return !state.isReplaceable() && state.getFluidState().isEmpty();
     }
 
     public void place() {
