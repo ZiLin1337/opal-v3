@@ -5,7 +5,10 @@ import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.*;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec2f;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.client.network.OtherClientPlayerEntity;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -38,7 +41,14 @@ public abstract class ScaffoldBase extends ModuleMode<ScaffoldModule> {
 
     // 核心共享方法
     public Vec3d getVec3() {
-        return mc.player != null ? mc.player.getPos() : null;
+        // 修复点1：1.21.10中移除getPositionVec()，手动构建Vec3d
+        if (mc.player == null) {
+            return null;
+        }
+        double x = mc.player.getX();
+        double y = mc.player.getY();
+        double z = mc.player.getZ();
+        return new Vec3d(x, y, z);
     }
 
     public boolean isValidStack() {
@@ -54,6 +64,7 @@ public abstract class ScaffoldBase extends ModuleMode<ScaffoldModule> {
 
     public boolean isSolidAndNonInteractive(BlockPos pos) {
         BlockState state = mc.world.getBlockState(pos);
+        // 修复点2：1.21.10中直接用BlockState.getMaterial()
         return !state.isReplaceable() && !state.getMaterial().isLiquid();
     }
 
