@@ -36,6 +36,8 @@ public final class ScaffoldSettings {
 
     private final BooleanProperty blockOverlay;
 
+    private final BooleanProperty blockCache;
+
     private final BooleanProperty overrideRaycast;
 
     private final MultipleBooleanProperty hypixelAddons;
@@ -62,13 +64,15 @@ public final class ScaffoldSettings {
 
         this.blockOverlay = new BooleanProperty("Block overlay", true);
 
+        this.blockCache = new BooleanProperty("Block cache", true);
+
         this.overrideRaycast = new BooleanProperty("Override raycast", true);
 
         this.hypixelAddons = new MultipleBooleanProperty("Hypixel addons",
                 new BooleanProperty("Boost", true)).hideIf(() -> !(LocalDataWatch.get().getKnownServerManager().getCurrentServer() instanceof HypixelServer));
 
         module.addModuleModes(mode, new VanillaScaffold(module), new WatchdogScaffold(module), new AntiGamingChairScaffold(module), new BloxdScaffold(module));
-        module.addProperties(rotationProperty.get(), mode, switchMode, swingMode, tower, snapRotations, overrideRaycast, sameY, autoJump, blockOverlay, hypixelAddons);
+        module.addProperties(rotationProperty.get(), mode, switchMode, swingMode, tower, snapRotations, overrideRaycast, sameY, autoJump, blockOverlay, blockCache, hypixelAddons);
     }
 
     public CPSProperty getSimulationCps() {
@@ -105,6 +109,10 @@ public final class ScaffoldSettings {
 
     public boolean isBlockOverlayEnabled() {
         return blockOverlay.getValue();
+    }
+
+    public boolean isBlockCacheEnabled() {
+        return blockCache.getValue();
     }
 
     public ModeProperty<SwitchMode> getSwitchMode() {
