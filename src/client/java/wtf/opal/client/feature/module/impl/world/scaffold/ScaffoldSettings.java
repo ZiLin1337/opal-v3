@@ -1,132 +1,138 @@
 package wtf.opal.client.feature.module.impl.world.scaffold;
 
+import wtf.opal.client.feature.helper.impl.LocalDataWatch;
+import wtf.opal.client.feature.helper.impl.player.rotation.RotationProperty;
+import wtf.opal.client.feature.helper.impl.player.rotation.model.IRotationModel;
+import wtf.opal.client.feature.helper.impl.player.rotation.model.impl.InstantRotationModel;
 import wtf.opal.client.feature.helper.impl.player.swing.CPSProperty;
+import wtf.opal.client.feature.helper.impl.server.impl.HypixelServer;
+import wtf.opal.client.feature.module.impl.world.scaffold.mode.AntiGamingChairScaffold;
+import wtf.opal.client.feature.module.impl.world.scaffold.mode.BloxdScaffold;
+import wtf.opal.client.feature.module.impl.world.scaffold.mode.VanillaScaffold;
+import wtf.opal.client.feature.module.impl.world.scaffold.mode.watchdog.WatchdogScaffold;
 import wtf.opal.client.feature.module.property.impl.GroupProperty;
 import wtf.opal.client.feature.module.property.impl.bool.BooleanProperty;
+import wtf.opal.client.feature.module.property.impl.bool.MultipleBooleanProperty;
 import wtf.opal.client.feature.module.property.impl.mode.ModeProperty;
 import wtf.opal.client.feature.module.property.impl.number.NumberProperty;
 
 public final class ScaffoldSettings {
 
-    private final ModeProperty<Mode> mode;
+    private final RotationProperty rotationProperty;
+    private final BooleanProperty movementIntelligence;
+    private final BooleanProperty movementSnapping, diagonalMovement;
+    private final NumberProperty movementSteps;
 
-    private final CPSProperty placeCps;
+    private final CPSProperty simulationCps;
 
-    private final BooleanProperty sameY;
-    private final BooleanProperty autoJump;
-
-    private final BooleanProperty safeWalk;
     private final BooleanProperty tower;
+    private final ModeProperty<Mode> mode;
 
     private final ModeProperty<SwitchMode> switchMode;
     private final ModeProperty<SwingMode> swingMode;
 
-    private final BooleanProperty overrideRaycast;
+    private final BooleanProperty snapRotations;
+    private final BooleanProperty sameY, autoJump;
+
     private final BooleanProperty blockOverlay;
 
-    private final NumberProperty rotateSpeed;
-    private final NumberProperty rotateBackSpeed;
+    private final BooleanProperty overrideRaycast;
 
-    private final NumberProperty tellyTick;
+    private final MultipleBooleanProperty hypixelAddons;
 
     public ScaffoldSettings(final ScaffoldModule module) {
-        this.mode = new ModeProperty<>("Mode", Mode.SNAP);
+        this.movementIntelligence = new BooleanProperty("Enabled", false);
+        this.diagonalMovement = new BooleanProperty("Diagonal movement", false);
+        this.movementSnapping = new BooleanProperty("Snap movement", true);
+        this.movementSteps = new NumberProperty("Steps", 3, 1, 3, 1).hideIf(() -> !this.isMovementSnapping());
+        this.rotationProperty = new RotationProperty(InstantRotationModel.INSTANCE,
+                new GroupProperty("Movement intelligence", this.movementIntelligence, this.diagonalMovement, this.movementSnapping, this.movementSteps));
 
-        this.placeCps = new CPSProperty(module, "Place CPS", false);
+        this.simulationCps = new CPSProperty(module, "Interact CPS", false);
 
+        this.mode = new ModeProperty<>("Mode", module, Mode.WATCHDOG);
+        this.tower = new BooleanProperty("Tower", false);
+
+        this.switchMode = new ModeProperty<>("Switch mode", module, SwitchMode.HOTBAR);
+        this.swingMode = new ModeProperty<>("Swing mode", SwingMode.CLIENT);
+
+        this.snapRotations = new BooleanProperty("Snap rotations", false);
         this.sameY = new BooleanProperty("Same Y", true);
         this.autoJump = new BooleanProperty("Auto jump", true).hideIf(() -> !this.isSameYEnabled());
 
-        this.safeWalk = new BooleanProperty("Safe walk", true);
-        this.tower = new BooleanProperty("Tower", false);
-
-        this.switchMode = new ModeProperty<>("Switch mode", SwitchMode.HOTBAR);
-        this.swingMode = new ModeProperty<>("Swing mode", SwingMode.CLIENT);
-
-        this.overrideRaycast = new BooleanProperty("Override raycast", true);
         this.blockOverlay = new BooleanProperty("Block overlay", true);
 
-        this.rotateSpeed = new NumberProperty("Rotate speed", 12.0, 1.0, 30.0, 0.5);
-        this.rotateBackSpeed = new NumberProperty("Rotate back speed", 18.0, 1.0, 40.0, 0.5);
+        this.overrideRaycast = new BooleanProperty("Override raycast", true);
 
-        this.tellyTick = new NumberProperty("Telly tick", 2, 0, 10, 1).hideIf(() -> this.getMode() != Mode.TELLY);
+        this.hypixelAddons = new MultipleBooleanProperty("Hypixel addons",
+                new BooleanProperty("Boost", true)).hideIf(() -> !(LocalDataWatch.get().getKnownServerManager().getCurrentServer() instanceof HypixelServer));
 
-        module.addProperties(
-                mode,
-                new GroupProperty("Rotations", rotateSpeed, rotateBackSpeed, overrideRaycast),
-                new GroupProperty("Placement", switchMode, swingMode),
-                new GroupProperty("Movement", sameY, autoJump, safeWalk, tower),
-                blockOverlay,
-                tellyTick
-        );
+        module.addModuleModes(mode, new VanillaScaffold(module), new WatchdogScaffold(module), new AntiGamingChairScaffold(module), new BloxdScaffold(module));
+        module.addProperties(rotationProperty.get(), mode, switchMode, swingMode, tower, snapRotations, overrideRaycast, sameY, autoJump, blockOverlay, hypixelAddons);
     }
 
-    public Mode getMode() {
-        return mode.getValue();
+    public CPSProperty getSimulationCps() {
+        return simulationCps;
     }
 
-    public CPSProperty getPlaceCps() {
-        return placeCps;
+    public boolean isDiagonalMovement() {
+        return this.diagonalMovement.getValue();
     }
 
-    public boolean isSameYEnabled() {
-        return sameY.getValue();
+    public boolean isMovementSnapping() {
+        return this.movementSnapping.getValue();
     }
 
-    public boolean isAutoJumpEnabled() {
-        return autoJump.getValue();
+    public boolean isMovementIntelligence() {
+        return this.movementIntelligence.getValue();
     }
 
-    public boolean isSafeWalkEnabled() {
-        return safeWalk.getValue();
+    public int getMovementIntelligenceSteps() {
+        return this.movementSteps.getValue().intValue();
+    }
+
+    public boolean isAutoJump() {
+        return this.autoJump.getValue();
+    }
+
+    public ModeProperty<Mode> getMode() {
+        return mode;
     }
 
     public boolean isTowerEnabled() {
         return tower.getValue();
     }
 
-    public SwitchMode getSwitchMode() {
-        return switchMode.getValue();
+    public boolean isBlockOverlayEnabled() {
+        return blockOverlay.getValue();
     }
 
-    public SwingMode getSwingMode() {
-        return swingMode.getValue();
+    public ModeProperty<SwitchMode> getSwitchMode() {
+        return switchMode;
+    }
+
+    public ModeProperty<SwingMode> getSwingMode() {
+        return swingMode;
+    }
+
+    public boolean isSnapRotationsEnabled() {
+        return snapRotations.getValue();
+    }
+
+    public boolean isSameYEnabled() {
+        return sameY.getValue();
     }
 
     public boolean isOverrideRaycast() {
         return overrideRaycast.getValue();
     }
 
-    public boolean isBlockOverlayEnabled() {
-        return blockOverlay.getValue();
+    public MultipleBooleanProperty getHypixelAddons() {
+        return hypixelAddons;
     }
 
-    public double getRotateSpeed() {
-        return rotateSpeed.getValue();
-    }
-
-    public double getRotateBackSpeed() {
-        return rotateBackSpeed.getValue();
-    }
-
-    public int getTellyTick() {
-        return tellyTick.getValue().intValue();
-    }
-
-    public enum Mode {
-        SNAP("Snap"),
-        TELLY("Telly");
-
-        private final String name;
-
-        Mode(final String name) {
-            this.name = name;
-        }
-
-        @Override
-        public String toString() {
-            return name;
-        }
+    public IRotationModel createRotationModel() {
+        return rotationProperty.createModel();
     }
 
     public enum SwitchMode {
@@ -136,7 +142,7 @@ public final class ScaffoldSettings {
 
         private final String name;
 
-        SwitchMode(final String name) {
+        SwitchMode(String name) {
             this.name = name;
         }
 
@@ -152,7 +158,7 @@ public final class ScaffoldSettings {
 
         private final String name;
 
-        SwingMode(final String name) {
+        SwingMode(String name) {
             this.name = name;
         }
 
@@ -161,4 +167,23 @@ public final class ScaffoldSettings {
             return name;
         }
     }
+
+    public enum Mode {
+        VANILLA("Vanilla"),
+        ANTI_GAMING_CHAIR("Anti Gaming Chair"),
+        WATCHDOG("Watchdog"),
+        BLOXD("Bloxd");
+
+        private final String name;
+
+        Mode(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+
 }
