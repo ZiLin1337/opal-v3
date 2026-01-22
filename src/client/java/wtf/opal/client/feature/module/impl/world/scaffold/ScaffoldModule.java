@@ -74,6 +74,7 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
         this.placeTick = 0;
         this.tellyAirTicks = 0;
 
+        // 确保 realStackSizeMap 总是被初始化为新实例
         this.realStackSizeMap = new HashMap<>();
 
         if (mc.player != null) {
@@ -238,8 +239,13 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
 
     @Subscribe(priority = 1)
     public void onHandleInput(final MouseHandleInputEvent event) {
-        if (mc.player == null || mc.world == null) {
+        if (mc.player == null || mc.world == null || !this.isEnabled()) {
             return;
+        }
+
+        // 确保 realStackSizeMap 已初始化
+        if (this.realStackSizeMap == null) {
+            this.realStackSizeMap = new HashMap<>();
         }
 
         final boolean holdingBlock = isGoodBlockStack(mc.player.getMainHandStack()) || isGoodBlockStack(mc.player.getOffHandStack());
@@ -348,9 +354,14 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
             if (!isGoodBlockStack(stack)) {
                 continue;
             }
-            final int count = this.realStackSizeMap != null
-                    ? this.realStackSizeMap.getOrDefault(i, stack.getCount())
-                    : stack.getCount();
+
+            // 确保 realStackSizeMap 存在且有效
+            final int count;
+            if (this.realStackSizeMap != null) {
+                count = this.realStackSizeMap.getOrDefault(i, stack.getCount());
+            } else {
+                count = stack.getCount();
+            }
 
             if (count > 0) {
                 return i;
