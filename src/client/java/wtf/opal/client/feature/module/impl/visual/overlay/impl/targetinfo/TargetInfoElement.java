@@ -22,6 +22,7 @@ import net.minecraft.text.TextColor;
 import net.minecraft.util.Colors;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.hit.EntityHitResult; // 必须导入这个
 import net.minecraft.util.math.MathHelper;
 import org.joml.Vector3f;
 import wtf.opal.client.Constants;
@@ -29,6 +30,7 @@ import wtf.opal.client.OpalClient;
 import wtf.opal.client.feature.helper.impl.LocalDataWatch;
 import wtf.opal.client.feature.helper.impl.server.impl.HypixelServer;
 import wtf.opal.client.feature.module.impl.combat.killaura.KillAuraModule;
+import wtf.opal.client.feature.module.impl.combat.killaura.target.CurrentTarget;
 import wtf.opal.client.feature.module.impl.visual.overlay.IOverlayElement;
 import wtf.opal.client.feature.module.impl.visual.overlay.OverlayModule;
 import wtf.opal.client.feature.module.property.impl.ScreenPositionProperty;
@@ -60,12 +62,12 @@ public final class TargetInfoElement implements IOverlayElement {
     private static final NVGTextRenderer MEDIUM_FONT = FontRepository.getFont("productsans-medium");
     private static final NVGTextRenderer ICON_FONT = FontRepository.getFont("materialicons-regular");
 
-    // --- 修改开始：路径已更正为你实际的文件位置 ---
+    // --- 修复 1: 修正中文字体文件路径 ---
     private static final NVGTextRenderer CJK_FONT = FontRepository.getOptionalFontFromResources(
             "minecraft-unifont",
-            "assets/opal/fonts/unifont.ttf" // 这里已经修改为正确的路径
+            "assets/opal/fonts/unifont.ttf"
     );
-    // --- 修改结束 ---
+    // --------------------------------
 
     private static final DecimalFormat HEALTH_DF = new DecimalFormat("0.#");
 
@@ -329,19 +331,33 @@ public final class TargetInfoElement implements IOverlayElement {
         return this.settings.isEnabled();
     }
 
+    // --- 修复 2: 完整的获取目标逻辑 ---
     private Target getTarget() {
-        LivingEntity target = LocalDataWatch.get().lastEntityAttack.getRight();
-        if (target != null && !LocalDataWatch.getTargetList().hasTarget(target.getId())) {
-            target = null;
+        LivingEntity target = null;
+
+        // 1. 优先获取 KillAura 锁定的目标
+        final KillAuraModule killAuraModule = OpalClient.getInstance().getModuleRepository().getModule(KillAuraModule.class);
+        if (killAuraModule.isEnabled()) {
+            final CurrentTarget killAuraTarget = killAuraModule.getTargeting().getTarget();
+            if (killAuraTarget != null) {
+                target = killAuraTarget.getEntity();
+            }
         }
 
+        // 2. 如果没有 KillAura 目标，尝试获取准星指向的实体 (Raycast/HitResult)
+        // 这就是为什么另一个客户端能显示的原因
+        if (target == null && mc.crosshairTarget instanceof EntityHitResult hitResult) {
+            if (hitResult.getEntity() instanceof LivingEntity livingEntity) {
+                target = livingEntity;
+            }
+        }
+
+        // 3. 最后尝试获取最近攻击的实体 (缓存)
         if (target == null) {
-            final KillAuraModule killAuraModule = OpalClient.getInstance().getModuleRepository().getModule(KillAuraModule.class);
-            if (killAuraModule.isEnabled()) {
-                net.minecraft.entity.Entity targetEntity = killAuraModule.getTargetEntity();
-                if (targetEntity instanceof LivingEntity) {
-                    target = (LivingEntity) targetEntity;
-                }
+            LivingEntity lastAttack = LocalDataWatch.get().lastEntityAttack.getRight();
+            // 这里保留原有的过滤逻辑，防止显示过期的无效目标
+            if (lastAttack != null && LocalDataWatch.getTargetList().hasTarget(lastAttack.getId())) {
+                target = lastAttack;
             }
         }
 
@@ -390,6 +406,7 @@ public final class TargetInfoElement implements IOverlayElement {
 
         return activeTarget;
     }
+    // ----------------------------
 
     private int getSkinTextureGlId(final LivingEntity entity) {
         final Identifier identifier = switch (entity) {

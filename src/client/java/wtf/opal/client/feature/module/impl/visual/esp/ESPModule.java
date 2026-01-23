@@ -11,6 +11,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.math.MathHelper; // 确保导入这个
 import net.minecraft.util.math.Vec2f;
 import org.joml.Vector4d;
 import wtf.opal.client.feature.helper.impl.LocalDataWatch;
@@ -35,6 +36,7 @@ import wtf.opal.utility.player.PlayerUtility;
 import wtf.opal.utility.render.ColorUtility;
 import wtf.opal.utility.render.ESPUtility;
 
+import java.awt.Color; // 导入颜色类
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +52,14 @@ public final class ESPModule extends Module {
 
     private static final NVGTextRenderer NAMETAG_FONT = FontRepository.getFont("productsans-bold");
     private static final NVGTextRenderer ICON_FONT = FontRepository.getFont("materialicons-regular");
+
+    // --- 中文字体修复 ---
+    private static final NVGTextRenderer CJK_FONT = FontRepository.getOptionalFontFromResources(
+            "minecraft-unifont",
+            "assets/opal/fonts/unifont.ttf"
+    );
+    // ------------------
+
     private static final DecimalFormat HEALTH_DF = new DecimalFormat("0.#");
     private static final float NAMETAG_FONT_SIZE = 5;
 
@@ -90,6 +100,9 @@ public final class ESPModule extends Module {
 
             final LivingEntity entity = target.getEntity();
 
+            // 增加空值检查，防止报错
+            if (entity == null) continue;
+
             if (frustum.isVisible(entity.getBoundingBox())) {
                 renderBoxIn2D(drawContext, entity, tickDelta);
             }
@@ -112,9 +125,20 @@ public final class ESPModule extends Module {
             renderFullBox(x, y, w, h, thickness, ColorUtility.applyOpacity(entity.getTeamColorValue(), 1F));
         }
 
+        // --- 修复 1: 安全的血量百分比计算 ---
         if (settings.getHealthBar()) {
-            renderHealthBar(x, y, w, h, thickness, entity.getHealth() / entity.getMaxHealth());
+            float currentHealth = entity.getHealth();
+            float maxHealth = entity.getMaxHealth();
+
+            // 防止 maxHealth 为 0 导致 NaN (除以零错误)
+            if (maxHealth <= 0) maxHealth = 1;
+
+            // 限制比例在 0 到 1 之间，防止越界
+            float healthPercentage = MathHelper.clamp(currentHealth / maxHealth, 0F, 1F);
+
+            renderHealthBar(x, y, w, h, thickness, healthPercentage);
         }
+        // --------------------------------
 
         nvgShapeAntiAlias(VG, true);
 
@@ -124,6 +148,11 @@ public final class ESPModule extends Module {
     }
 
     private void renderHealthBar(final float x, final float y, final float w, final float h, final float thickness, final float healthValue) {
+        // --- 修复 2: 动态颜色 (绿 -> 黄 -> 红) ---
+        // 0.0 是红色，0.33 是绿色。根据血量百分比插值。
+        int healthColor = Color.getHSBColor(healthValue * 0.33f, 1.0f, 1.0f).getRGB();
+        // -------------------------------------
+
         if (settings.getHealthBarStroke()) {
             NVGRenderer.rectStroke(
                     x - (thickness * 2) - 0.5F - (settings.getBox() && settings.getBoxStroke() ? 0.5F : 0),
@@ -131,7 +160,7 @@ public final class ESPModule extends Module {
                     thickness,
                     h * healthValue,
                     thickness,
-                    0xff00ff00,
+                    healthColor, // 使用动态颜色
                     0xff000000
             );
         } else {
@@ -140,7 +169,7 @@ public final class ESPModule extends Module {
                     y + (h - (h * healthValue)),
                     thickness,
                     h * healthValue,
-                    0xff00ff00
+                    healthColor // 使用动态颜色
             );
         }
     }
@@ -199,13 +228,6 @@ public final class ESPModule extends Module {
         if (elements.getProperty("Name").getValue()) {
             int color = -1;
             String name = Formatting.WHITE + PlayerUtility.getFormattedEntityName(entity);
-
-//            final User user = ClientSocket.getInstance().getUserOrNull(entity.getUuid());
-//            if (user != null) {
-//                name += " " + Formatting.GRAY + "(" + Formatting.RESET + user.getName() + Formatting.GRAY + ")";
-//                color = user.getRole().getArgb();
-//            }
-
             elementList.add(new NameTagElement(name, color));
         }
 
@@ -295,7 +317,9 @@ public final class ESPModule extends Module {
             final NameTagElement element = elements.get(i);
 
             if (element.text() != null) {
-                totalWidth += NAMETAG_FONT.getStringWidth(element.text(), NAMETAG_FONT_SIZE);
+                final boolean useCjk = CJK_FONT != null && containsChinese(element.text());
+                final NVGTextRenderer font = useCjk ? CJK_FONT : NAMETAG_FONT;
+                totalWidth += font.getStringWidth(element.text(), NAMETAG_FONT_SIZE);
             }
 
             if (element.icon() != null) {
@@ -320,14 +344,16 @@ public final class ESPModule extends Module {
             final boolean hasText = element.text() != null;
             final boolean hasIcon = element.icon() != null;
 
-            final float elementWidth = hasText ? NAMETAG_FONT.getStringWidth(element.text(), NAMETAG_FONT_SIZE) : 0;
+            final boolean useCjk = hasText && CJK_FONT != null && containsChinese(element.text());
+            final NVGTextRenderer font = useCjk ? CJK_FONT : NAMETAG_FONT;
+
+            final float elementWidth = hasText ? font.getStringWidth(element.text(), NAMETAG_FONT_SIZE) : 0;
             final NameTagIcon icon = element.icon();
 
             final float iconWidth = hasIcon
                     ? ICON_FONT.getStringWidth(icon.unicode(), NAMETAG_FONT_SIZE)
                     : 0;
 
-            // draw bg
             final float bgPadding = 2;
             final float bgRadius = 2;
             NVGRenderer.roundedRect(
@@ -349,24 +375,43 @@ public final class ESPModule extends Module {
 
             float textX = currentX;
 
-            // draw left icon
             if (hasIcon && icon.position() == NameTagIconPosition.LEFT) {
                 ICON_FONT.drawString(icon.unicode(), currentX + icon.horizontalOffset(), position.y + 1, NAMETAG_FONT_SIZE, element.color());
                 textX += iconWidth;
             }
 
-            // draw text
             if (hasText) {
-                NAMETAG_FONT.drawString(element.text(), textX, position.y, NAMETAG_FONT_SIZE, element.color());
+                font.drawString(element.text(), textX, position.y, NAMETAG_FONT_SIZE, element.color());
             }
 
-            // draw right icon
             if (hasIcon && icon.position() == NameTagIconPosition.RIGHT) {
                 ICON_FONT.drawString(icon.unicode(), textX + elementWidth + icon.horizontalOffset(), position.y + 1, NAMETAG_FONT_SIZE, element.color());
             }
 
             currentX += elementWidth + iconWidth + 5;
         }
+    }
+
+    private static boolean containsChinese(final String text) {
+        if (text == null || text.isEmpty()) {
+            return false;
+        }
+
+        for (int i = 0; i < text.length(); ) {
+            final int codePoint = text.codePointAt(i);
+
+            if ((codePoint >= 0x4E00 && codePoint <= 0x9FFF)
+                    || (codePoint >= 0x3400 && codePoint <= 0x4DBF)
+                    || (codePoint >= 0x20000 && codePoint <= 0x2EBEF)
+                    || (codePoint >= 0xF900 && codePoint <= 0xFAFF)
+                    || (codePoint >= 0x2F800 && codePoint <= 0x2FA1F)) {
+                return true;
+            }
+
+            i += Character.charCount(codePoint);
+        }
+
+        return false;
     }
 
     public ESPSettings getSettings() {
