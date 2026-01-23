@@ -35,6 +35,7 @@ public final class ScaffoldSettings {
     private final BooleanProperty sameY, autoJump;
 
     private final BooleanProperty blockOverlay;
+    private final BooleanProperty blockCacheOverlay;
 
     private final BooleanProperty blockCache;
 
@@ -63,6 +64,7 @@ public final class ScaffoldSettings {
         this.autoJump = new BooleanProperty("Auto jump", true).hideIf(() -> !this.isSameYEnabled());
 
         this.blockOverlay = new BooleanProperty("Block overlay", true);
+        this.blockCacheOverlay = new BooleanProperty("Block cache overlay", true);
 
         this.blockCache = new BooleanProperty("Block cache", true);
 
@@ -73,6 +75,7 @@ public final class ScaffoldSettings {
 
         module.addModuleModes(mode, new VanillaScaffold(module), new WatchdogScaffold(module), new AntiGamingChairScaffold(module), new BloxdScaffold(module));
         module.addProperties(rotationProperty.get(), mode, switchMode, swingMode, tower, snapRotations, overrideRaycast, sameY, autoJump, blockOverlay, blockCache, hypixelAddons);
+        module.addProperties(rotationProperty.get(), mode, switchMode, swingMode, tower, snapRotations, overrideRaycast, sameY, autoJump, blockOverlay, blockCacheOverlay, hypixelAddons);
     }
 
     public CPSProperty getSimulationCps() {
@@ -111,8 +114,8 @@ public final class ScaffoldSettings {
         return blockOverlay.getValue();
     }
 
-    public boolean isBlockCacheEnabled() {
-        return blockCache.getValue();
+    public boolean isBlockCacheOverlayEnabled() {
+        return blockCacheOverlay.getValue();
     }
 
     public ModeProperty<SwitchMode> getSwitchMode() {

@@ -72,23 +72,6 @@ public final class KillAuraModule extends Module {
         return targeting;
     }
 
-    /**
-     * Returns the current target entity.
-     * @return the current target entity, or null if no target is selected
-     */
-    public net.minecraft.entity.Entity getTargetEntity() {
-        final CurrentTarget target = this.targeting.getTarget();
-        return target != null ? target.getEntity() : null;
-    }
-
-    /**
-     * Checks if a target is currently selected.
-     * @return true if a target is selected, false otherwise
-     */
-    public boolean isTargetSelected() {
-        return this.targeting.isTargetSelected();
-    }
-
     @Subscribe
     public void onHandleInput(final MouseHandleInputEvent event) {
         final CurrentTarget target = this.targeting.getTarget();

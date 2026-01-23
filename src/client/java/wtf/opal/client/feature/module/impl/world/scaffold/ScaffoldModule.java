@@ -70,6 +70,13 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
 
     private Map<Integer, Integer> realStackSizeMap;
 
+    private Map<Integer, Integer> getRealStackSizeMap() {
+        if (this.realStackSizeMap == null) {
+            this.realStackSizeMap = new HashMap<>();
+        }
+        return this.realStackSizeMap;
+    }
+
     public ScaffoldModule() {
         super("Scaffold", "Automatically places blocks under you.", ModuleCategory.WORLD);
     }
@@ -77,7 +84,9 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
     @Override
     protected void onDisable() {
         this.dynamicIsland.onDisable();
-        this.realStackSizeMap = null;
+        if (this.realStackSizeMap != null) {
+            this.realStackSizeMap.clear();
+        }
         this.intelligentRotation = null;
         this.placeTick = 0;
 
@@ -91,7 +100,7 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
         blockCache = null;
         rotation = null;
 
-        this.realStackSizeMap = new HashMap<>();
+        this.getRealStackSizeMap().clear();
 
         if (mc.player == null) return;
         sameYPos = MathHelper.floor(mc.player.getY());
@@ -101,7 +110,11 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
     public void onBlockPlaced(BlockPlacedEvent event) {
         if (!mc.interactionManager.getCurrentGameMode().isCreative()) {
             int selectedSlot = mc.player.getInventory().getSelectedSlot();
-            this.realStackSizeMap.put(selectedSlot, this.realStackSizeMap.getOrDefault(selectedSlot, mc.player.getMainHandStack().getCount() + 1) - 1);
+            Map<Integer, Integer> realStackSizeMap = this.getRealStackSizeMap();
+            realStackSizeMap.put(
+                    selectedSlot,
+                    realStackSizeMap.getOrDefault(selectedSlot, mc.player.getMainHandStack().getCount() + 1) - 1
+            );
         }
     }
 
@@ -118,6 +131,14 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
             // 我们不需要检查该位置是否为空气，直接渲染即可
             final Vec3d startVec = new Vec3d(targetPos.getX(), targetPos.getY(), targetPos.getZ());
             final Vec3d dimensions = new Vec3d(1, 1, 1);
+    @Subscribe
+    public void onRenderWorld(final RenderWorldEvent event) {
+        if (this.blockCache != null && settings.isBlockCacheOverlayEnabled()) {
+            BlockPos targetPos = this.blockCache.blockWithDirection.blockPos();
+
+            if (!mc.world.getBlockState(targetPos).isAir()) {
+                final Vec3d startVec = new Vec3d(targetPos.getX(), targetPos.getY(), targetPos.getZ());
+                final Vec3d dimensions = new Vec3d(1, 1, 1);
 
             VertexConsumerProvider.Immediate vcp = VertexConsumerProvider.immediate(new BufferAllocator(1024));
             WorldRenderer rc = new WorldRenderer(vcp);
@@ -127,7 +148,6 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
             vcp.draw();
         }
     }
-    // ----------------------
 
     @Subscribe(priority = 1)
     public void onMoveInput(final MoveInputEvent event) {
@@ -352,19 +372,21 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
                 && mc.player != null
                 && pickup.getCollectorEntityId() == mc.player.getId()) {
             int selectedSlot = mc.player.getInventory().getSelectedSlot();
-            this.realStackSizeMap.put(
+            Map<Integer, Integer> realStackSizeMap = this.getRealStackSizeMap();
+            realStackSizeMap.put(
                     selectedSlot,
-                    this.realStackSizeMap.getOrDefault(selectedSlot, mc.player.getMainHandStack().getCount() - pickup.getStackAmount()) + pickup.getStackAmount()
+                    realStackSizeMap.getOrDefault(selectedSlot, mc.player.getMainHandStack().getCount() - pickup.getStackAmount()) + pickup.getStackAmount()
             );
         }
     }
 
     private int getPlaceableBlock() {
+        Map<Integer, Integer> realStackSizeMap = this.getRealStackSizeMap();
         for (int i = 0; i < 9; i++) {
             final ItemStack itemStack = mc.player.getInventory().getMainStacks().get(i);
             if (itemStack.getItem() instanceof BlockItem blockItem
-                    && this.realStackSizeMap.getOrDefault(i, itemStack.getCount()) > 0 &&
-                    InventoryUtility.isGoodBlock(blockItem.getBlock())) {
+                    && realStackSizeMap.getOrDefault(i, itemStack.getCount()) > 0
+                    && InventoryUtility.isGoodBlock(blockItem.getBlock())) {
                 return i;
             }
         }
