@@ -128,7 +128,8 @@ public final class SaveUtility {
                 for (final Property<?> property : module.getPropertyList()) {
                     final JsonObject propertyJson = new JsonObject();
                     propertyJson.addProperty("name", property.getId());
-                    propertyJson.addProperty("value", property.getValue().toString());
+                    // 使用 GSON 正确序列化属性值，包括 Complex 类型如 Pair<Float, Float>
+                    propertyJson.add("value", GSON.toJsonTree(property.getValue()));
                     propertiesArray.add(propertyJson);
                 }
                 moduleJson.add("properties", propertiesArray);
@@ -146,6 +147,9 @@ public final class SaveUtility {
 
     public static boolean loadConfig(final String jsonString) {
         try {
+            // 1. 先重置所有模块到默认状态
+            resetAllModules();
+
             final List<?> jsonModules = GSON.fromJson(jsonString, List.class);
 
             for (final Object jsonModuleObj : jsonModules) {
@@ -158,21 +162,25 @@ public final class SaveUtility {
                 for (final Module clientModule : OpalClient.getInstance().getModuleRepository().getModules()) {
                     if (jsonModuleID.equals(clientModule.getId())) {
 
-                        if (jsonEnabled != null && jsonEnabled != clientModule.isEnabled()) {
+                        // 2. 应用 enabled 状态
+                        if (jsonEnabled != null) {
                             clientModule.setEnabled(jsonEnabled);
                         }
-                        if (jsonVisible != null && jsonVisible != clientModule.isVisible()) {
+                        if (jsonVisible != null) {
                             clientModule.setVisible(jsonVisible);
                         }
 
-                        for (final Object jsonPropertyObj : jsonProperties) {
-                            final LinkedTreeMap<?, ?> jsonProperty = (LinkedTreeMap<?, ?>) jsonPropertyObj;
-                            final String propertyName = (String) jsonProperty.get("name");
-                            final Object propertyValue = jsonProperty.get("value");
+                        // 3. 加载所有属性
+                        if (jsonProperties != null) {
+                            for (final Object jsonPropertyObj : jsonProperties) {
+                                final LinkedTreeMap<?, ?> jsonProperty = (LinkedTreeMap<?, ?>) jsonPropertyObj;
+                                final String propertyName = (String) jsonProperty.get("name");
+                                final Object propertyValue = jsonProperty.get("value");
 
-                            for (final Property<?> clientProperty : clientModule.getPropertyList()) {
-                                if (propertyName.equals(clientProperty.getId())) {
-                                    clientProperty.applyValue(propertyValue);
+                                for (final Property<?> clientProperty : clientModule.getPropertyList()) {
+                                    if (propertyName.equals(clientProperty.getId())) {
+                                        clientProperty.applyValue(propertyValue);
+                                    }
                                 }
                             }
                         }
@@ -184,6 +192,18 @@ public final class SaveUtility {
             e.printStackTrace();
         }
         return false;
+    }
+
+    /**
+     * 重置所有模块到默认状态
+     * 在加载新配置前调用，确保旧配置状态不会影响新配置
+     */
+    private static void resetAllModules() {
+        for (final Module module : OpalClient.getInstance().getModuleRepository().getModules()) {
+            if (module.isEnabled()) {
+                module.setEnabled(false);
+            }
+        }
     }
 
     public static boolean loadConfigFromFile(final String configName) {
