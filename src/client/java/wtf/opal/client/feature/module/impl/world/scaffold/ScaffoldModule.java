@@ -70,6 +70,13 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
 
     private Map<Integer, Integer> realStackSizeMap;
 
+    private Map<Integer, Integer> getRealStackSizeMap() {
+        if (this.realStackSizeMap == null) {
+            this.realStackSizeMap = new HashMap<>();
+        }
+        return this.realStackSizeMap;
+    }
+
     public ScaffoldModule() {
         super("Scaffold", "Automatically places blocks under you.", ModuleCategory.WORLD);
     }
@@ -77,7 +84,9 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
     @Override
     protected void onDisable() {
         this.dynamicIsland.onDisable();
-        this.realStackSizeMap = null;
+        if (this.realStackSizeMap != null) {
+            this.realStackSizeMap.clear();
+        }
         this.intelligentRotation = null;
         this.placeTick = 0;
 
@@ -91,7 +100,7 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
         blockCache = null;
         rotation = null;
 
-        this.realStackSizeMap = new HashMap<>();
+        this.getRealStackSizeMap().clear();
 
         if (mc.player == null) return;
         sameYPos = MathHelper.floor(mc.player.getY());
@@ -101,7 +110,11 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
     public void onBlockPlaced(BlockPlacedEvent event) {
         if (!mc.interactionManager.getCurrentGameMode().isCreative()) {
             int selectedSlot = mc.player.getInventory().getSelectedSlot();
-            this.realStackSizeMap.put(selectedSlot, this.realStackSizeMap.getOrDefault(selectedSlot, mc.player.getMainHandStack().getCount() + 1) - 1);
+            Map<Integer, Integer> realStackSizeMap = this.getRealStackSizeMap();
+            realStackSizeMap.put(
+                    selectedSlot,
+                    realStackSizeMap.getOrDefault(selectedSlot, mc.player.getMainHandStack().getCount() + 1) - 1
+            );
         }
     }
 
@@ -347,19 +360,21 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
                 && mc.player != null
                 && pickup.getCollectorEntityId() == mc.player.getId()) {
             int selectedSlot = mc.player.getInventory().getSelectedSlot();
-            this.realStackSizeMap.put(
+            Map<Integer, Integer> realStackSizeMap = this.getRealStackSizeMap();
+            realStackSizeMap.put(
                     selectedSlot,
-                    this.realStackSizeMap.getOrDefault(selectedSlot, mc.player.getMainHandStack().getCount() - pickup.getStackAmount()) + pickup.getStackAmount()
+                    realStackSizeMap.getOrDefault(selectedSlot, mc.player.getMainHandStack().getCount() - pickup.getStackAmount()) + pickup.getStackAmount()
             );
         }
     }
 
     private int getPlaceableBlock() {
+        Map<Integer, Integer> realStackSizeMap = this.getRealStackSizeMap();
         for (int i = 0; i < 9; i++) {
             final ItemStack itemStack = mc.player.getInventory().getMainStacks().get(i);
             if (itemStack.getItem() instanceof BlockItem blockItem
-                    && this.realStackSizeMap.getOrDefault(i, itemStack.getCount()) > 0 &&
-                    InventoryUtility.isGoodBlock(blockItem.getBlock())) {
+                    && realStackSizeMap.getOrDefault(i, itemStack.getCount()) > 0
+                    && InventoryUtility.isGoodBlock(blockItem.getBlock())) {
                 return i;
             }
         }
