@@ -118,6 +118,19 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
         }
     }
 
+    // --- blockCache渲染方法 ---
+    @Subscribe
+    public void onRenderWorld(final RenderWorldEvent event) {
+        // 使用 blockCache 而不是 crosshairTarget，确保在 Silent Rotation 时也能渲染
+        if (this.blockCache != null && settings.isBlockCacheEnabled()) {
+
+            // 获取 Scaffold 计算的目标位置
+            BlockPos targetPos = this.blockCache.blockWithDirection.blockPos();
+
+            // blockCache表示要放置方块的位置，该位置应该是空气或可替换方块
+            // 我们不需要检查该位置是否为空气，直接渲染即可
+            final Vec3d startVec = new Vec3d(targetPos.getX(), targetPos.getY(), targetPos.getZ());
+            final Vec3d dimensions = new Vec3d(1, 1, 1);
     @Subscribe
     public void onRenderWorld(final RenderWorldEvent event) {
         if (this.blockCache != null && settings.isBlockCacheOverlayEnabled()) {
@@ -127,13 +140,12 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
                 final Vec3d startVec = new Vec3d(targetPos.getX(), targetPos.getY(), targetPos.getZ());
                 final Vec3d dimensions = new Vec3d(1, 1, 1);
 
-                VertexConsumerProvider.Immediate vcp = VertexConsumerProvider.immediate(new BufferAllocator(1024));
-                WorldRenderer rc = new WorldRenderer(vcp);
+            VertexConsumerProvider.Immediate vcp = VertexConsumerProvider.immediate(new BufferAllocator(1024));
+            WorldRenderer rc = new WorldRenderer(vcp);
 
-                rc.drawFilledCube(event.matrixStack(), CustomRenderLayers.getPositionColorQuads(true), startVec, dimensions, ColorUtility.applyOpacity(ColorUtility.getClientTheme().first, 0.25F));
+            rc.drawFilledCube(event.matrixStack(), CustomRenderLayers.getPositionColorQuads(true), startVec, dimensions, ColorUtility.applyOpacity(ColorUtility.getClientTheme().first, 0.25F));
 
-                vcp.draw();
-            }
+            vcp.draw();
         }
     }
 
