@@ -72,6 +72,23 @@ public final class KillAuraModule extends Module {
         return targeting;
     }
 
+    /**
+     * 获取当前选择的目标实体
+     * @return 目标实体，如果没有选择则返回null
+     */
+    public net.minecraft.entity.Entity getTargetEntity() {
+        CurrentTarget target = this.targeting.getTarget();
+        return target != null ? target.getEntity() : null;
+    }
+
+    /**
+     * 检查是否已选择目标
+     * @return 如果有选择的目标则返回true
+     */
+    public boolean isTargetSelected() {
+        return this.targeting.isTargetSelected();
+    }
+
     @Subscribe
     public void onHandleInput(final MouseHandleInputEvent event) {
         final CurrentTarget target = this.targeting.getTarget();
