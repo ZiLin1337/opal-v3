@@ -131,14 +131,6 @@ public final class ScaffoldModule extends Module implements IslandTrigger {
             // 我们不需要检查该位置是否为空气，直接渲染即可
             final Vec3d startVec = new Vec3d(targetPos.getX(), targetPos.getY(), targetPos.getZ());
             final Vec3d dimensions = new Vec3d(1, 1, 1);
-    @Subscribe
-    public void onRenderWorld(final RenderWorldEvent event) {
-        if (this.blockCache != null && settings.isBlockCacheOverlayEnabled()) {
-            BlockPos targetPos = this.blockCache.blockWithDirection.blockPos();
-
-            if (!mc.world.getBlockState(targetPos).isAir()) {
-                final Vec3d startVec = new Vec3d(targetPos.getX(), targetPos.getY(), targetPos.getZ());
-                final Vec3d dimensions = new Vec3d(1, 1, 1);
 
             VertexConsumerProvider.Immediate vcp = VertexConsumerProvider.immediate(new BufferAllocator(1024));
             WorldRenderer rc = new WorldRenderer(vcp);
