@@ -75,7 +75,6 @@ public final class ScaffoldSettings {
 
         module.addModuleModes(mode, new VanillaScaffold(module), new WatchdogScaffold(module), new AntiGamingChairScaffold(module), new BloxdScaffold(module));
         module.addProperties(rotationProperty.get(), mode, switchMode, swingMode, tower, snapRotations, overrideRaycast, sameY, autoJump, blockOverlay, blockCache, hypixelAddons);
-        module.addProperties(rotationProperty.get(), mode, switchMode, swingMode, tower, snapRotations, overrideRaycast, sameY, autoJump, blockOverlay, blockCacheOverlay, hypixelAddons);
     }
 
     public CPSProperty getSimulationCps() {
@@ -116,6 +115,10 @@ public final class ScaffoldSettings {
 
     public boolean isBlockCacheOverlayEnabled() {
         return blockCacheOverlay.getValue();
+    }
+
+    public boolean isBlockCacheEnabled() {
+        return blockCache.getValue();
     }
 
     public ModeProperty<SwitchMode> getSwitchMode() {
